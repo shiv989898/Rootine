@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Rootine",
+    "slug": "rootine",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#4CAF50"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rootine.app",
+      "buildNumber": "1.0.0"
+    },
+    "android": {
+      "package": "com.rootine.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {},
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share your progress."
+        }
+      ]
+    ],
+    "scheme": "rootine",
+    "extra": {
+      "eas": {
+        "projectId": "bd09aec9-8675-4b91-beca-aa3700bfc00a"
+      }
+    }
+  }
+}

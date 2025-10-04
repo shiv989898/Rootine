@@ -1,0 +1,334 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidString(text, minLength, maxLength) {
+      return text is string 
+        && text.size() >= minLength 
+        && text.size() <= maxLength;
+    }
+    
+    function isValidTimestamp(value) {
+      return value is timestamp;
+    }
+    
+    // Users Collection
+    match /users/{userId} {
+      // Allow users to read their own profile
+      allow read: if isOwner(userId);
+      
+      // Allow users to create their own profile
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasAll(['displayName', 'email', 'createdAt'])
+        && isValidString(request.resource.data.displayName, 1, 50)
+        && isValidString(request.resource.data.email, 3, 100)
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Allow users to update their own profile
+      allow update: if isOwner(userId)
+        && request.resource.data.email == resource.data.email // Can't change email
+        && (!request.resource.data.keys().hasAny(['createdAt'])); // Can't change createdAt
+      
+      // No one can delete user documents (handled by Cloud Functions)
+      allow delete: if false;
+      
+      // User Profile subcollection
+      match /profile/{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // Habits Collection
+    match /habits/{habitId} {
+      // Users can read their own habits
+      allow read: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid;
+      
+      // Users can create habits
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidString(request.resource.data.name, 1, 100)
+        && request.resource.data.frequency in ['daily', 'weekly', 'custom']
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Users can update their own habits
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid // Can't transfer ownership
+        && isValidString(request.resource.data.name, 1, 100);
+      
+      // Users can delete their own habits
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Habit Completions Collection
+    match /habitCompletions/{completionId} {
+      // Users can read their own completions
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // Users can create completions for their habits
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidTimestamp(request.resource.data.completedAt);
+      
+      // Users can update their own completions
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      
+      // Users can delete their own completions
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Diet Plans Collection
+    match /dietPlans/{planId} {
+      // Users can read their own diet plans
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // Users can create their own diet plans
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidTimestamp(request.resource.data.createdAt)
+        && request.resource.data.totalCalories is number
+        && request.resource.data.totalCalories > 0;
+      
+      // Users can update their own diet plans
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      
+      // Users can delete their own diet plans
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Posts Collection (Social Feed)
+    match /posts/{postId} {
+      // Anyone authenticated can read posts
+      allow read: if isAuthenticated();
+      
+      // Users can create posts
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidString(request.resource.data.content, 1, 1000)
+        && isValidTimestamp(request.resource.data.createdAt)
+        && request.resource.data.likes == 0
+        && request.resource.data.commentsCount == 0;
+      
+      // Users can update their own posts
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid // Can't transfer ownership
+        && request.resource.data.createdAt == resource.data.createdAt; // Can't change creation time
+      
+      // Users can delete their own posts
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Post Likes Collection
+    match /postLikes/{likeId} {
+      // Anyone can read likes
+      allow read: if isAuthenticated();
+      
+      // Users can like posts
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Users can unlike (delete their own likes)
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // No updates allowed on likes
+      allow update: if false;
+    }
+    
+    // Comments Collection
+    match /comments/{commentId} {
+      // Anyone authenticated can read comments
+      allow read: if isAuthenticated();
+      
+      // Users can create comments
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidString(request.resource.data.content, 1, 500)
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Users can update their own comments (within 5 minutes)
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.time < resource.data.createdAt + duration.value(5, 'm');
+      
+      // Users can delete their own comments
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Friendships Collection
+    match /friendships/{friendshipId} {
+      // Users can read friendships they're part of
+      allow read: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid 
+          || resource.data.friendId == request.auth.uid);
+      
+      // Users can create friend requests
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Users can update friendship status (accept/reject)
+      allow update: if isAuthenticated()
+        && (resource.data.friendId == request.auth.uid // Friend accepting
+          || resource.data.userId == request.auth.uid); // User canceling
+      
+      // Users can delete friendships they're part of
+      allow delete: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid 
+          || resource.data.friendId == request.auth.uid);
+    }
+    
+    // Challenges Collection
+    match /challenges/{challengeId} {
+      // Anyone authenticated can read public challenges
+      allow read: if isAuthenticated();
+      
+      // Users can create challenges
+      allow create: if isAuthenticated()
+        && request.resource.data.createdBy == request.auth.uid
+        && isValidString(request.resource.data.name, 1, 100)
+        && isValidString(request.resource.data.description, 1, 500)
+        && isValidTimestamp(request.resource.data.startDate)
+        && isValidTimestamp(request.resource.data.endDate)
+        && request.resource.data.startDate < request.resource.data.endDate;
+      
+      // Challenge creators can update their challenges
+      allow update: if isAuthenticated()
+        && resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdBy == request.auth.uid;
+      
+      // Challenge creators can delete their challenges
+      allow delete: if isAuthenticated()
+        && resource.data.createdBy == request.auth.uid;
+    }
+    
+    // User Challenges (Challenge Participants)
+    match /userChallenges/{userChallengeId} {
+      // Users can read challenges they're participating in
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // Users can join challenges
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidTimestamp(request.resource.data.joinedAt);
+      
+      // Users can update their challenge progress
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      
+      // Users can leave challenges
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // User Points Collection
+    match /userPoints/{userId} {
+      // Users can read their own points
+      allow read: if isOwner(userId);
+      
+      // Users can create their points record
+      allow create: if isOwner(userId)
+        && request.resource.data.totalPoints == 0
+        && request.resource.data.level == 1;
+      
+      // Only Cloud Functions can update points
+      allow update: if false;
+      
+      // No deletion allowed
+      allow delete: if false;
+    }
+    
+    // Badges Collection
+    match /badges/{badgeId} {
+      // Anyone can read badges
+      allow read: if isAuthenticated();
+      
+      // Only admins can create badges (handled by Cloud Functions)
+      allow create, update, delete: if false;
+    }
+    
+    // User Badges Collection
+    match /userBadges/{userBadgeId} {
+      // Users can read their own badges
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // Only Cloud Functions can award badges
+      allow create, update, delete: if false;
+    }
+    
+    // Shopping Lists Collection
+    match /shoppingLists/{listId} {
+      // Users can read their own shopping lists
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // Users can create shopping lists
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Users can update their own shopping lists
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      
+      // Users can delete their own shopping lists
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // System can create notifications (Cloud Functions)
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their notifications (mark as read)
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      
+      // Users can delete their notifications
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
