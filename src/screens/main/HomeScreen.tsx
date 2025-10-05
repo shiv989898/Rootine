@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   View,
   Text,
@@ -21,12 +21,12 @@ const HomeScreen = () => {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.userName}>{user?.displayName || 'Friend'}! 👋</Text>
+            <Text style={styles.userName}>{user?.displayName || 'Friend'}! ðŸ‘‹</Text>
           </View>
           <View style={styles.statsContainer}>
             <View style={styles.statBadge}>
               <Text style={styles.statValue}>{user?.profile.streakDays || 0}</Text>
-              <Text style={styles.statLabel}>🔥 Streak</Text>
+              <Text style={styles.statLabel}>ðŸ”¥ Streak</Text>
             </View>
           </View>
         </View>
@@ -35,9 +35,9 @@ const HomeScreen = () => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Your Progress</Text>
           <View style={styles.statsRow}>
-            <StatItem label="Level" value={user?.profile.level.toString() || '1'} icon="⭐" />
-            <StatItem label="Points" value={user?.profile.points.toString() || '0'} icon="🎯" />
-            <StatItem label="Badges" value={user?.profile.badges.length.toString() || '0'} icon="🏆" />
+            <StatItem label="Level" value={user?.profile.level.toString() || '1'} icon="â­" />
+            <StatItem label="Points" value={user?.profile.points.toString() || '0'} icon="ðŸŽ¯" />
+            <StatItem label="Badges" value={user?.profile.badges.length.toString() || '0'} icon="ðŸ†" />
           </View>
         </View>
 
@@ -47,7 +47,7 @@ const HomeScreen = () => {
             <Text style={styles.cardTitle}>Today's Habits</Text>
             <Text style={styles.dateText}>{formatDate(new Date(), 'MMM dd')}</Text>
           </View>
-          <Text style={styles.emptyText}>Start tracking your habits! 🌱</Text>
+          <Text style={styles.emptyText}>Start tracking your habits! ðŸŒ±</Text>
           <TouchableOpacity style={styles.addButton}>
             <Text style={styles.addButtonText}>+ Add Habit</Text>
           </TouchableOpacity>
@@ -55,7 +55,7 @@ const HomeScreen = () => {
 
         {/* Motivational Quote */}
         <View style={[styles.card, styles.quoteCard]}>
-          <Text style={styles.quoteIcon}>💪</Text>
+          <Text style={styles.quoteIcon}>ðŸ’ª</Text>
           <Text style={styles.quoteText}>
             "The secret of getting ahead is getting started."
           </Text>
@@ -64,9 +64,9 @@ const HomeScreen = () => {
 
         {/* Quick Actions */}
         <View style={styles.actionsContainer}>
-          <QuickActionButton icon="🍎" label="Get Diet Plan" />
-          <QuickActionButton icon="🏆" label="Join Challenge" />
-          <QuickActionButton icon="👥" label="Add Friends" />
+          <QuickActionButton icon="ðŸŽ" label="Get Diet Plan" />
+          <QuickActionButton icon="ðŸ†" label="Join Challenge" />
+          <QuickActionButton icon="ðŸ‘¥" label="Add Friends" />
         </View>
       </ScrollView>
     </SafeAreaView>

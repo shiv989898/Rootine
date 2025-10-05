@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
 import { createPost } from '@/services/firebase/socialService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -183,10 +183,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <Icon name="lightbulb-outline" size={20} color={COLORS.secondary} />
               <Text style={styles.tipTitle}>Posting Tips</Text>
             </View>
-            <Text style={styles.tipText}>• Share your progress and achievements</Text>
-            <Text style={styles.tipText}>• Ask questions and support others</Text>
-            <Text style={styles.tipText}>• Be positive and encouraging</Text>
-            <Text style={styles.tipText}>• Keep it authentic and genuine</Text>
+            <Text style={styles.tipText}>â€¢ Share your progress and achievements</Text>
+            <Text style={styles.tipText}>â€¢ Ask questions and support others</Text>
+            <Text style={styles.tipText}>â€¢ Be positive and encouraging</Text>
+            <Text style={styles.tipText}>â€¢ Keep it authentic and genuine</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

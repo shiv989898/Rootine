@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   View,
   Text,
@@ -35,7 +35,7 @@ const OnboardingScreen = () => {
       >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logo}>🌱</Text>
+            <Text style={styles.logo}>ðŸŒ±</Text>
             <Text style={styles.title}>Rootine</Text>
             <Text style={styles.subtitle}>
               Build Better Habits, Live Healthier
@@ -43,10 +43,10 @@ const OnboardingScreen = () => {
           </View>
 
           <View style={styles.featuresContainer}>
-            <FeatureItem icon="📊" text="Track Your Progress" />
-            <FeatureItem icon="🏆" text="Complete Challenges" />
-            <FeatureItem icon="👥" text="Connect with Friends" />
-            <FeatureItem icon="🍎" text="AI-Powered Diet Plans" />
+            <FeatureItem icon="ðŸ“Š" text="Track Your Progress" />
+            <FeatureItem icon="ðŸ†" text="Complete Challenges" />
+            <FeatureItem icon="ðŸ‘¥" text="Connect with Friends" />
+            <FeatureItem icon="ðŸŽ" text="AI-Powered Diet Plans" />
           </View>
 
           <View style={styles.buttonContainer}>

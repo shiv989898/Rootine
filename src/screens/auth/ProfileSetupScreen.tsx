@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -238,7 +238,7 @@ const ProfileSetupScreen = () => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.emoji}>🌱</Text>
+            <Text style={styles.emoji}>ðŸŒ±</Text>
             <Text style={styles.title}>Setup Your Profile</Text>
             <View style={styles.progressBar}>
               <View

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
 import { Habit, HabitCategory, Recurrence } from '@/types';
 import { createHabit, updateHabit } from '@/services/firebase/habitService';
@@ -360,8 +360,8 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
                   {description || 'Your habit description'}
                 </Text>
                 <Text style={styles.previewMeta}>
-                  {category} • {recurrence.type}
-                  {reminderEnabled && ` • ${reminderTime}`}
+                  {category} â€¢ {recurrence.type}
+                  {reminderEnabled && ` â€¢ ${reminderTime}`}
                 </Text>
               </View>
             </View>

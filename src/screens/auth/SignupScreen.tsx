@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -70,7 +70,7 @@ const SignupScreen = () => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.emoji}>🌱</Text>
+            <Text style={styles.emoji}>ðŸŒ±</Text>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Join Rootine and start your journey</Text>
           </View>
