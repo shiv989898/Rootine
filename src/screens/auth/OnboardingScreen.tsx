@@ -1,171 +1,61 @@
 ﻿import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  Image,
-  TouchableOpacity,
-  StatusBar,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
 import { RootStackParamList } from '@/types';
-import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
-import { useAuth } from '@/contexts/AuthContext';
+import type { StackScreenProps } from '@react-navigation/stack';
 
-type OnboardingScreenProp = StackNavigationProp<RootStackParamList, 'Onboarding'>;
+type Props = StackScreenProps<RootStackParamList, 'Onboarding'>;
 
-const OnboardingScreen = () => {
-  const navigation = useNavigation<OnboardingScreenProp>();
-  const { signInAsGuest } = useAuth();
-
-  const handleGuestSignIn = async () => {
-    await signInAsGuest();
-    navigation.navigate('ProfileSetup');
-  };
-
+const OnboardingScreen = ({ navigation }: Props) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={[COLORS.primary, COLORS.primaryDark]}
-        style={styles.gradient}
-      >
-        <View style={styles.content}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logo}>ðŸŒ±</Text>
-            <Text style={styles.title}>Rootine</Text>
-            <Text style={styles.subtitle}>
-              Build Better Habits, Live Healthier
-            </Text>
-          </View>
-
-          <View style={styles.featuresContainer}>
-            <FeatureItem icon="ðŸ“Š" text="Track Your Progress" />
-            <FeatureItem icon="ðŸ†" text="Complete Challenges" />
-            <FeatureItem icon="ðŸ‘¥" text="Connect with Friends" />
-            <FeatureItem icon="ðŸŽ" text="AI-Powered Diet Plans" />
-          </View>
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary]}
-              onPress={() => navigation.navigate('Signup')}
-            >
-              <Text style={styles.buttonTextPrimary}>Get Started</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.buttonSecondary]}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={styles.buttonTextSecondary}>Sign In</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleGuestSignIn}
-            >
-              <Text style={styles.guestText}>Continue as Guest</Text>
-            </TouchableOpacity>
-          </View>
+      <View style={styles.content}>
+        <View style={styles.logoContainer}>
+          <Icon name="leaf" size={80} color={COLORS.primary} />
+          <Text style={styles.appName}>Rootine</Text>
+          <Text style={styles.tagline}>Build Better Habits</Text>
         </View>
-      </LinearGradient>
+        <View style={styles.featuresContainer}>
+          <FeatureItem icon="chart-line" text="Track Your Progress" />
+          <FeatureItem icon="trophy" text="Complete Challenges" />
+          <FeatureItem icon="account-group" text="Connect with Friends" />
+          <FeatureItem icon="food-apple" text="AI-Powered Diet Plans" />
+        </View>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('Signup')}>
+            <Text style={styles.primaryButtonText}>Get Started</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.secondaryButtonText}>I already have an account</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
 
 const FeatureItem = ({ icon, text }: { icon: string; text: string }) => (
   <View style={styles.featureItem}>
-    <Text style={styles.featureIcon}>{icon}</Text>
+    <Icon name={icon as any} size={24} color={COLORS.primary} />
     <Text style={styles.featureText}>{text}</Text>
   </View>
 );
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: SPACING.lg,
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.xxl,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: SPACING.xxl,
-  },
-  logo: {
-    fontSize: 80,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: SPACING.sm,
-  },
-  subtitle: {
-    fontSize: FONT_SIZES.lg,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-  },
-  featuresContainer: {
-    gap: SPACING.md,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: SPACING.md,
-    borderRadius: RADIUS.lg,
-  },
-  featureIcon: {
-    fontSize: 32,
-    marginRight: SPACING.md,
-  },
-  featureText: {
-    fontSize: FONT_SIZES.lg,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  buttonContainer: {
-    gap: SPACING.md,
-  },
-  button: {
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.lg,
-    alignItems: 'center',
-  },
-  buttonPrimary: {
-    backgroundColor: '#FFFFFF',
-  },
-  buttonSecondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  buttonTextPrimary: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZES.lg,
-    fontWeight: 'bold',
-  },
-  buttonTextSecondary: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
-    fontWeight: 'bold',
-  },
-  guestText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    fontSize: FONT_SIZES.md,
-    marginTop: SPACING.sm,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { flex: 1, padding: SPACING.xl, justifyContent: 'space-between' },
+  logoContainer: { alignItems: 'center', marginTop: 60 },
+  appName: { fontSize: 48, fontWeight: 'bold', color: COLORS.primary, marginTop: SPACING.md },
+  tagline: { fontSize: FONT_SIZES.lg, color: COLORS.textSecondary, marginTop: SPACING.xs },
+  featuresContainer: { marginVertical: SPACING.xl },
+  featureItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md },
+  featureText: { fontSize: FONT_SIZES.md, color: COLORS.text, marginLeft: SPACING.md },
+  buttonContainer: { gap: SPACING.md },
+  primaryButton: { backgroundColor: COLORS.primary, paddingVertical: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', ...SHADOWS.md },
+  primaryButtonText: { color: '#FFFFFF', fontSize: FONT_SIZES.lg, fontWeight: '600' },
+  secondaryButton: { backgroundColor: 'transparent', paddingVertical: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', borderWidth: 2, borderColor: COLORS.primary },
+  secondaryButtonText: { color: COLORS.primary, fontSize: FONT_SIZES.md, fontWeight: '600' },
 });
 
 export default OnboardingScreen;

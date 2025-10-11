@@ -7,11 +7,18 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
 import { getGreeting, formatDate } from '@/utils/helpers';
+import { RootStackParamList } from '@/types';
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const HomeScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
 
   return (
@@ -21,12 +28,13 @@ const HomeScreen = () => {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.userName}>{user?.displayName || 'Friend'}! ðŸ‘‹</Text>
+            <Text style={styles.userName}>{user?.displayName || 'Friend'}!</Text>
           </View>
           <View style={styles.statsContainer}>
             <View style={styles.statBadge}>
+              <Icon name="fire" size={20} color="#FF5722" />
               <Text style={styles.statValue}>{user?.profile.streakDays || 0}</Text>
-              <Text style={styles.statLabel}>ðŸ”¥ Streak</Text>
+              <Text style={styles.statLabel}>Streak</Text>
             </View>
           </View>
         </View>
@@ -35,9 +43,9 @@ const HomeScreen = () => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Your Progress</Text>
           <View style={styles.statsRow}>
-            <StatItem label="Level" value={user?.profile.level.toString() || '1'} icon="â­" />
-            <StatItem label="Points" value={user?.profile.points.toString() || '0'} icon="ðŸŽ¯" />
-            <StatItem label="Badges" value={user?.profile.badges.length.toString() || '0'} icon="ðŸ†" />
+            <StatItem label="Level" value={user?.profile.level.toString() || '1'} iconName="star" />
+            <StatItem label="Points" value={user?.profile.points.toString() || '0'} iconName="target" />
+            <StatItem label="Badges" value={user?.profile.badges.length.toString() || '0'} iconName="trophy" />
           </View>
         </View>
 
@@ -47,15 +55,16 @@ const HomeScreen = () => {
             <Text style={styles.cardTitle}>Today's Habits</Text>
             <Text style={styles.dateText}>{formatDate(new Date(), 'MMM dd')}</Text>
           </View>
-          <Text style={styles.emptyText}>Start tracking your habits! ðŸŒ±</Text>
+          <Text style={styles.emptyText}>Start tracking your habits!</Text>
           <TouchableOpacity style={styles.addButton}>
-            <Text style={styles.addButtonText}>+ Add Habit</Text>
+            <Icon name="plus" size={20} color="#FFFFFF" />
+            <Text style={styles.addButtonText}>Add Habit</Text>
           </TouchableOpacity>
         </View>
 
         {/* Motivational Quote */}
         <View style={[styles.card, styles.quoteCard]}>
-          <Text style={styles.quoteIcon}>ðŸ’ª</Text>
+          <Icon name="arm-flex" size={40} color={COLORS.primary} />
           <Text style={styles.quoteText}>
             "The secret of getting ahead is getting started."
           </Text>
@@ -64,26 +73,26 @@ const HomeScreen = () => {
 
         {/* Quick Actions */}
         <View style={styles.actionsContainer}>
-          <QuickActionButton icon="ðŸŽ" label="Get Diet Plan" />
-          <QuickActionButton icon="ðŸ†" label="Join Challenge" />
-          <QuickActionButton icon="ðŸ‘¥" label="Add Friends" />
+          <QuickActionButton iconName="podium-gold" label="Leaderboard" onPress={() => navigation.navigate('Leaderboard')} />
+          <QuickActionButton iconName="trophy" label="Challenges" onPress={() => navigation.navigate('Challenges')} />
+          <QuickActionButton iconName="account-group" label="Add Friends" onPress={() => navigation.navigate('SearchUsers')} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const StatItem = ({ label, value, icon }: { label: string; value: string; icon: string }) => (
+const StatItem = ({ label, value, iconName }: { label: string; value: string; iconName: string }) => (
   <View style={styles.statItem}>
-    <Text style={styles.statIcon}>{icon}</Text>
+    <Icon name={iconName as any} size={32} color={COLORS.primary} />
     <Text style={styles.statItemValue}>{value}</Text>
     <Text style={styles.statItemLabel}>{label}</Text>
   </View>
 );
 
-const QuickActionButton = ({ icon, label }: { icon: string; label: string }) => (
-  <TouchableOpacity style={styles.actionButton}>
-    <Text style={styles.actionIcon}>{icon}</Text>
+const QuickActionButton = ({ iconName, label, onPress }: { iconName: string; label: string; onPress?: () => void }) => (
+  <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.7}>
+    <Icon name={iconName as any} size={32} color={COLORS.primary} />
     <Text style={styles.actionLabel}>{label}</Text>
   </TouchableOpacity>
 );
@@ -161,14 +170,11 @@ const styles = StyleSheet.create({
   statItem: {
     alignItems: 'center',
   },
-  statIcon: {
-    fontSize: 32,
-    marginBottom: SPACING.xs,
-  },
   statItemValue: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: 'bold',
     color: COLORS.text,
+    marginTop: SPACING.xs,
   },
   statItemLabel: {
     fontSize: FONT_SIZES.sm,
@@ -183,8 +189,12 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: COLORS.primary,
     paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
   },
   addButtonText: {
     color: '#FFFFFF',
@@ -195,16 +205,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryLight,
     alignItems: 'center',
   },
-  quoteIcon: {
-    fontSize: 40,
-    marginBottom: SPACING.sm,
-  },
   quoteText: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '600',
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: SPACING.sm,
+    marginVertical: SPACING.md,
   },
   quoteAuthor: {
     fontSize: FONT_SIZES.sm,
@@ -225,14 +231,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...SHADOWS.sm,
   },
-  actionIcon: {
-    fontSize: 32,
-    marginBottom: SPACING.xs,
-  },
   actionLabel: {
     fontSize: FONT_SIZES.xs,
     color: COLORS.text,
     textAlign: 'center',
+    marginTop: SPACING.xs,
   },
 });
 

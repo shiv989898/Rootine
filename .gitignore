@@ -25,6 +25,7 @@ yarn-error.log
 Thumbs.db
 
 # Android
+android/
 *.apk
 *.ap_
 *.aab

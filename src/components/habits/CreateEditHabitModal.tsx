@@ -256,7 +256,7 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
                   onPress={() => setIcon(iconName)}
                 >
                   <Icon
-                    name={iconName}
+                    name={iconName as any}
                     size={24}
                     color={icon === iconName ? COLORS.white : COLORS.textSecondary}
                   />
@@ -350,7 +350,7 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
             <Text style={styles.label}>Preview</Text>
             <View style={[styles.preview, { borderLeftColor: color }]}>
               <View style={[styles.previewIcon, { backgroundColor: color }]}>
-                <Icon name={icon} size={24} color={COLORS.white} />
+                <Icon name={icon as any} size={24} color={COLORS.white} />
               </View>
               <View style={styles.previewContent}>
                 <Text style={styles.previewTitle}>

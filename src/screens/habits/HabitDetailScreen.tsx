@@ -137,7 +137,7 @@ const HabitDetailScreen = () => {
 
         {/* Habit Info */}
         <View style={[styles.iconCircle, { backgroundColor: habit.color }]}>
-          <Icon name={habit.icon} size={48} color={COLORS.white} />
+          <Icon name={habit.icon as any} size={48} color={COLORS.white} />
         </View>
 
         <Text style={styles.title}>{habit.title}</Text>
@@ -183,7 +183,7 @@ const HabitDetailScreen = () => {
           </View>
 
           <View style={styles.detailRow}>
-            <Icon name="calendar-repeat" size={20} color={COLORS.textSecondary} />
+            <Icon name="calendar-range" size={20} color={COLORS.textSecondary} />
             <Text style={styles.detailLabel}>Frequency</Text>
             <Text style={styles.detailValue}>
               {habit.recurrence.type === 'custom' && habit.recurrence.daysOfWeek

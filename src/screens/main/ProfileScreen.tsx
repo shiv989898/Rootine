@@ -10,31 +10,51 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
 import { getInitials } from '@/utils/helpers';
 import { getFriends, getPendingFriendRequests } from '@/services/firebase/socialService';
+import { getUserBadges, getRarityColor } from '@/services/firebase/achievementService';
+import { getUserPointsAndLevel } from '@/services/firebase/userService';
+import { RootStackParamList, Badge } from '@/types';
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ProfileScreen = () => {
   const { user, signOut } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
   const [friendsCount, setFriendsCount] = useState(0);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [userStats, setUserStats] = useState({
+    points: 0,
+    level: 0,
+    weeklyPoints: 0,
+    monthlyPoints: 0,
+  });
 
   useEffect(() => {
-    loadSocialStats();
+    loadProfileData();
   }, []);
 
-  const loadSocialStats = async () => {
+  const loadProfileData = async () => {
     try {
-      const [friends, pendingRequests] = await Promise.all([
+      const [friends, pendingRequests, userBadges, stats] = await Promise.all([
         getFriends(),
         getPendingFriendRequests(),
+        getUserBadges(),
+        getUserPointsAndLevel(),
       ]);
       setFriendsCount(friends.length);
       setPendingRequestsCount(pendingRequests.length);
+      setBadges(userBadges);
+      setUserStats(stats);
     } catch (error) {
-      console.error('Error loading social stats:', error);
+      console.error('Error loading profile data:', error);
     } finally {
       setLoading(false);
     }
@@ -57,6 +77,21 @@ const ProfileScreen = () => {
     ]);
   };
 
+  // Calculate XP progress to next level
+  const currentLevelXP = userStats.level * 100;
+  const nextLevelXP = (userStats.level + 1) * 100;
+  const xpProgress = userStats.points - currentLevelXP;
+  const xpNeeded = nextLevelXP - currentLevelXP;
+  const progressPercentage = (xpProgress / xpNeeded) * 100;
+
+  // Get top 3 badges by rarity
+  const topBadges = badges
+    .sort((a, b) => {
+      const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
+      return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+    })
+    .slice(0, 3);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -76,26 +111,140 @@ const ProfileScreen = () => {
           )}
         </View>
 
+        {/* Level & XP Card */}
+        <LinearGradient
+          colors={['#4CAF50', '#45a049']}
+          style={styles.levelCard}
+        >
+          <View style={styles.levelHeader}>
+            <View style={styles.levelBadge}>
+              <Icon name="trophy" size={28} color="#FFD700" />
+              <Text style={styles.levelNumber}>{userStats.level}</Text>
+            </View>
+            <View style={styles.levelInfo}>
+              <Text style={styles.levelTitle}>Level {userStats.level}</Text>
+              <Text style={styles.levelSubtitle}>
+                {xpProgress} / {xpNeeded} XP
+              </Text>
+            </View>
+          </View>
+          
+          {/* Progress Bar */}
+          <View style={styles.xpProgressContainer}>
+            <View style={styles.xpProgressBar}>
+              <View 
+                style={[
+                  styles.xpProgressFill, 
+                  { width: `${Math.min(progressPercentage, 100)}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.xpProgressText}>
+              {Math.round(progressPercentage)}% to Level {userStats.level + 1}
+            </Text>
+          </View>
+        </LinearGradient>
+
+        {/* Badges Showcase */}
+        {topBadges.length > 0 && (
+          <View style={styles.badgesSection}>
+            <View style={styles.badgesHeader}>
+              <Text style={styles.sectionTitle}>Top Achievements</Text>
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('BadgeShowcase')}
+                style={styles.viewAllButton}
+              >
+                <Text style={styles.viewAllText}>View All ({badges.length})</Text>
+                <Icon name="chevron-right" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.badgesContainer}>
+              {topBadges.map((badge) => (
+                <View 
+                  key={badge.id} 
+                  style={[
+                    styles.badgeCard,
+                    { borderColor: getRarityColor(badge.rarity) }
+                  ]}
+                >
+                  <View style={[
+                    styles.badgeIconContainer,
+                    { backgroundColor: getRarityColor(badge.rarity) }
+                  ]}>
+                    <Icon name={badge.icon as any} size={24} color="#FFF" />
+                  </View>
+                  <Text style={styles.badgeTitle} numberOfLines={1}>
+                    {badge.name}
+                  </Text>
+                  <View style={[
+                    styles.rarityTag,
+                    { backgroundColor: getRarityColor(badge.rarity) }
+                  ]}>
+                    <Text style={styles.rarityTagText}>
+                      {badge.rarity.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Stats */}
         <View style={styles.statsContainer}>
-          <StatCard label="Level" value={user?.profile.level.toString() || '1'} icon="trophy" />
-          <StatCard label="Points" value={user?.profile.points.toString() || '0'} icon="star" />
-          <StatCard label="Friends" value={friendsCount.toString()} icon="account-multiple" loading={loading} />
-          <StatCard label="Streak" value={`${user?.profile.streakDays || 0}`} icon="fire" />
+          <StatCard 
+            label="Total Points" 
+            value={userStats.points.toString()} 
+            icon="star" 
+            color="#FFD700"
+          />
+          <StatCard 
+            label="Weekly" 
+            value={userStats.weeklyPoints.toString()} 
+            icon="calendar-week" 
+            color="#2196F3"
+          />
+          <StatCard 
+            label="Monthly" 
+            value={userStats.monthlyPoints.toString()} 
+            icon="calendar-month" 
+            color="#9C27B0"
+          />
+          <StatCard 
+            label="Streak" 
+            value={`${user?.profile.currentStreak || 0}d`} 
+            icon="fire" 
+            color="#FF5722"
+          />
         </View>
 
         {/* Menu Options */}
         <View style={styles.menuContainer}>
-          <MenuOption icon="account-edit" label="Edit Profile" />
-          <MenuOption icon="trophy" label="Achievements" />
+          <MenuOption icon="account-edit" label="Edit Profile" onPress={() => {}} />
+          <MenuOption 
+            icon="trophy" 
+            label="Achievements" 
+            onPress={() => navigation.navigate('BadgeShowcase')}
+          />
+          <MenuOption 
+            icon="chart-line" 
+            label="Leaderboard" 
+            onPress={() => navigation.navigate('Leaderboard')}
+          />
           <MenuOption 
             icon="account-multiple" 
             label="Friends" 
             badge={pendingRequestsCount > 0 ? pendingRequestsCount : undefined}
+            onPress={() => navigation.navigate('FriendsList')}
           />
-          <MenuOption icon="cog" label="Settings" />
+          <MenuOption 
+            icon="account-plus" 
+            label="Find Friends" 
+            onPress={() => navigation.navigate('SearchUsers')}
+          />
+          <MenuOption icon="cog" label="Settings" onPress={() => {}} />
           {!user?.profile.isPremium && (
-            <MenuOption icon="star" label="Upgrade to Premium" premium />
+            <MenuOption icon="star" label="Upgrade to Premium" premium onPress={() => {}} />
           )}
         </View>
 
@@ -112,21 +261,23 @@ const StatCard = ({
   label, 
   value, 
   icon, 
-  loading 
+  loading,
+  color = COLORS.primary
 }: { 
   label: string; 
   value: string; 
   icon: string;
   loading?: boolean;
+  color?: string;
 }) => (
   <View style={styles.statCard}>
     <View style={styles.statIconContainer}>
-      <Icon name={icon} size={24} color={COLORS.primary} />
+      <Icon name={icon as any} size={24} color={color} />
     </View>
     {loading ? (
-      <ActivityIndicator size="small" color={COLORS.primary} style={styles.statValue} />
+      <ActivityIndicator size="small" color={color} style={styles.statValue} />
     ) : (
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
     )}
     <Text style={styles.statLabel}>{label}</Text>
   </View>
@@ -137,18 +288,22 @@ const MenuOption = ({
   label,
   premium = false,
   badge,
+  onPress,
 }: {
   icon: string;
   label: string;
   premium?: boolean;
   badge?: number;
+  onPress?: () => void;
 }) => (
   <TouchableOpacity
     style={[styles.menuOption, premium && styles.menuOptionPremium]}
+    onPress={onPress}
+    activeOpacity={0.7}
   >
     <View style={styles.menuOptionLeft}>
       <Icon 
-        name={icon} 
+        name={icon as any}
         size={24} 
         color={premium ? COLORS.warning : COLORS.text} 
         style={styles.menuIcon}
@@ -215,6 +370,128 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     fontWeight: '600',
   },
+  levelCard: {
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+    ...SHADOWS.md,
+  },
+  levelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  levelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.lg,
+    marginRight: SPACING.md,
+  },
+  levelNumber: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginLeft: SPACING.xs,
+  },
+  levelInfo: {
+    flex: 1,
+  },
+  levelTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  levelSubtitle: {
+    fontSize: FONT_SIZES.md,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  xpProgressContainer: {
+    marginTop: SPACING.xs,
+  },
+  xpProgressBar: {
+    height: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: SPACING.xs,
+  },
+  xpProgressFill: {
+    height: '100%',
+    backgroundColor: '#FFD700',
+    borderRadius: 6,
+  },
+  xpProgressText: {
+    fontSize: FONT_SIZES.sm,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  badgesSection: {
+    marginBottom: SPACING.xl,
+  },
+  badgesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  sectionTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewAllText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  badgesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+  },
+  badgeCard: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    ...SHADOWS.sm,
+  },
+  badgeIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs,
+  },
+  badgeTitle: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '600',
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  rarityTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  rarityTagText: {
+    fontSize: 9,
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -237,7 +514,6 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: 'bold',
-    color: COLORS.primary,
     marginBottom: SPACING.xs,
   },
   statLabel: {

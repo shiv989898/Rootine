@@ -11,6 +11,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
@@ -238,7 +239,7 @@ const ProfileSetupScreen = () => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.emoji}>ðŸŒ±</Text>
+            <Icon name="leaf" size={60} color={COLORS.primary} />
             <Text style={styles.title}>Setup Your Profile</Text>
             <View style={styles.progressBar}>
               <View

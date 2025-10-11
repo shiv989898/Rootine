@@ -5,12 +5,34 @@ const genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY || '
 
 export const geminiService = {
   // Generate personalized diet plan
-  generateDietPlan: async (profile: UserProfile, date: string): Promise<DietPlan> => {
+  generateDietPlan: async (
+    profile: UserProfile, 
+    date: string,
+    dietType: string = 'vegetarian',
+    mealType: string = 'all',
+    seed?: number
+  ): Promise<DietPlan> => {
     try {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
+      // Add variety by including seed in prompt
+      const varietyNote = seed ? `\n\nIMPORTANT: This is request #${seed}. Provide DIFFERENT meal suggestions than previous requests. Be creative with recipes and ingredients to ensure variety.` : '';
+      
+      // Determine which meals to include
+      let mealsToInclude = '';
+      if (mealType === 'all') {
+        mealsToInclude = `
+1. Breakfast
+2. Mid-morning snack
+3. Lunch
+4. Evening snack
+5. Dinner`;
+      } else {
+        mealsToInclude = `Only provide ${mealType} options (provide 2-3 variations)`;
+      }
+
       const prompt = `
-You are a professional nutritionist. Create a personalized vegetarian diet plan for today (${date}).
+You are a professional nutritionist. Create a personalized ${dietType} diet plan for today (${date}).
 
 User Profile:
 - Age: ${profile.age || 'Not specified'}
@@ -18,16 +40,12 @@ User Profile:
 - Height: ${profile.height ? `${profile.height} cm` : 'Not specified'}
 - Gender: ${profile.gender || 'Not specified'}
 - Activity Level: ${profile.activityLevel}
-- Dietary Preference: ${profile.dietaryPreference}
+- Dietary Preference: ${dietType}
 - Allergies: ${profile.allergies.length > 0 ? profile.allergies.join(', ') : 'None'}
 - Goals: ${profile.goals.length > 0 ? profile.goals.join(', ') : 'General health'}
 
-Please provide a full day meal plan with:
-1. Breakfast
-2. Mid-morning snack
-3. Lunch
-4. Evening snack
-5. Dinner
+Please provide a meal plan with:
+${mealsToInclude}
 
 For each meal, provide:
 - Name of the dish
@@ -59,10 +77,10 @@ Format the response as JSON with this structure:
 }
 
 Make sure the meals are:
-- ${profile.dietaryPreference === 'vegan' ? 'Completely plant-based (vegan)' : 'Vegetarian'}
+- ${dietType === 'vegan' ? 'Completely plant-based (vegan)' : dietType === 'non-vegetarian' ? 'Can include meat, fish, and eggs' : dietType === 'pescatarian' ? 'Fish and plant-based (no meat)' : 'Vegetarian'}
 - Free from: ${profile.allergies.length > 0 ? profile.allergies.join(', ') : 'No restrictions'}
 - Suitable for ${profile.activityLevel} activity level
-- Nutritionally balanced
+- Nutritionally balanced${varietyNote}
 `;
 
       const result = await model.generateContent(prompt);

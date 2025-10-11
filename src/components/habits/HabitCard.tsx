@@ -1,8 +1,9 @@
-﻿import React from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { Habit } from '@/types';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
+import PointsAnimation from '@/components/animations/PointsAnimation';
 
 interface HabitCardProps {
   habit: Habit;
@@ -11,13 +12,21 @@ interface HabitCardProps {
   onPress: () => void;
 }
 
-export const HabitCard: React.FC<HabitCardProps> = ({
+export const HabitCard = React.memo<HabitCardProps>(({
   habit,
   isCompleted,
   onToggle,
   onPress,
 }) => {
   const scaleValue = React.useRef(new Animated.Value(1)).current;
+  const [showPoints, setShowPoints] = useState(false);
+
+  // Cleanup animation state on unmount
+  useEffect(() => {
+    return () => {
+      setShowPoints(false);
+    };
+  }, []);
 
   const handleToggle = () => {
     Animated.sequence([
@@ -32,6 +41,12 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         useNativeDriver: true,
       }),
     ]).start();
+    
+    // Show points animation when completing (not when uncompleting)
+    if (!isCompleted) {
+      setShowPoints(true);
+    }
+    
     onToggle();
   };
 
@@ -39,7 +54,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <View style={[styles.container, isCompleted && styles.completed]}>
         <View style={[styles.iconContainer, { backgroundColor: habit.color }]}>
-          <Icon name={habit.icon} size={24} color={COLORS.white} />
+          <Icon name={habit.icon as any} size={24} color={COLORS.white} />
         </View>
 
         <View style={styles.content}>
@@ -75,10 +90,26 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             )}
           </TouchableOpacity>
         </Animated.View>
+
+        {/* Points Animation */}
+        <PointsAnimation
+          points={10}
+          visible={showPoints}
+          onComplete={() => setShowPoints(false)}
+          type="habit"
+        />
       </View>
     </TouchableOpacity>
   );
-};
+}, (prevProps, nextProps) => {
+  // Prevent re-render if habit data hasn't changed
+  return (
+    prevProps.habit.id === nextProps.habit.id &&
+    prevProps.isCompleted === nextProps.isCompleted &&
+    prevProps.habit.currentStreak === nextProps.habit.currentStreak &&
+    prevProps.habit.title === nextProps.habit.title
+  );
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,3 +1,6 @@
+// Import polyfills BEFORE any Firebase imports
+import 'react-native-get-random-values';
+
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -8,6 +11,7 @@ import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { RootStackParamList, TabParamList } from './src/types';
 import { COLORS } from './src/constants/theme';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 // Import screens
 import OnboardingScreen from './src/screens/auth/OnboardingScreen';
@@ -21,6 +25,11 @@ import FeedScreen from './src/screens/main/FeedScreen';
 import DietScreen from './src/screens/main/DietScreen';
 import ProfileScreen from './src/screens/main/ProfileScreen';
 import RecipeDetailScreen from './src/screens/diet/RecipeDetailScreen';
+import FriendsListScreen from './src/screens/social/FriendsListScreen';
+import SearchUsersScreen from './src/screens/social/SearchUsersScreen';
+import ChallengesScreen from './src/screens/challenges/ChallengesScreen';
+import LeaderboardScreen from './src/screens/leaderboard/LeaderboardScreen';
+import BadgeShowcaseScreen from './src/screens/achievements/BadgeShowcaseScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -94,6 +103,11 @@ const RootNavigator = () => {
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
+          <Stack.Screen name="FriendsList" component={FriendsListScreen} />
+          <Stack.Screen name="SearchUsers" component={SearchUsersScreen} />
+          <Stack.Screen name="Challenges" component={ChallengesScreen} />
+          <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+          <Stack.Screen name="BadgeShowcase" component={BadgeShowcaseScreen} />
         </>
       )}
     </Stack.Navigator>
@@ -103,12 +117,14 @@ const RootNavigator = () => {
 // Main App Component
 export default function App() {
   return (
-    <PaperProvider>
-      <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </AuthProvider>
-    </PaperProvider>
+    <ErrorBoundary>
+      <PaperProvider>
+        <AuthProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </PaperProvider>
+    </ErrorBoundary>
   );
 }

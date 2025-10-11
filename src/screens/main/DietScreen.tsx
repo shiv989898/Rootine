@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -20,24 +21,38 @@ import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
 
 type DietScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
+type DietType = 'vegetarian' | 'non-vegetarian' | 'vegan' | 'pescatarian';
+type MealType = 'all' | 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+
 const DietScreen = () => {
   const { user } = useAuth();
   const navigation = useNavigation<DietScreenNavigationProp>();
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedDietType, setSelectedDietType] = useState<DietType>('vegetarian');
+  const [selectedMealType, setSelectedMealType] = useState<MealType>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadTodaysPlan();
   }, []);
 
-  const loadTodaysPlan = async () => {
+  const loadTodaysPlan = async (forceNew: boolean = false) => {
     if (!user?.profile) return;
 
     try {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
-      const plan = await geminiService.generateDietPlan(user.profile, today);
+      // Add random seed to ensure variety on refresh
+      const seed = forceNew ? Date.now() : undefined;
+      const plan = await geminiService.generateDietPlan(
+        user.profile,
+        today,
+        selectedDietType,
+        selectedMealType,
+        seed
+      );
       setDietPlan(plan);
     } catch (error: any) {
       console.error('Error loading diet plan:', error);
@@ -49,7 +64,7 @@ const DietScreen = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadTodaysPlan();
+    await loadTodaysPlan(true); // Force new variety
     setRefreshing(false);
   };
 
@@ -59,7 +74,8 @@ const DietScreen = () => {
       return;
     }
 
-    await loadTodaysPlan();
+    await loadTodaysPlan(true);
+    setShowFilters(false);
   };
 
   const getMealIcon = (mealType: string) => {
@@ -71,6 +87,7 @@ const DietScreen = () => {
       case 'dinner':
         return 'silverware-fork-knife';
       case 'snack':
+      case 'snacks':
         return 'cookie';
       default:
         return 'food-apple';
@@ -86,11 +103,103 @@ const DietScreen = () => {
       case 'dinner':
         return 'Dinner';
       case 'snack':
-        return 'Snack';
+      case 'snacks':
+        return 'Snacks';
       default:
         return mealType;
     }
   };
+
+  const filteredMeals = selectedMealType === 'all' 
+    ? dietPlan?.meals 
+    : dietPlan?.meals.filter(meal => meal.type === selectedMealType);
+
+  const renderFilterModal = () => (
+    <Modal
+      visible={showFilters}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowFilters(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Customize Your Diet Plan</Text>
+            <TouchableOpacity onPress={() => setShowFilters(false)}>
+              <Icon name="close" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Diet Type Selection */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>Diet Type</Text>
+            <View style={styles.filterOptions}>
+              {(['vegetarian', 'non-vegetarian', 'vegan', 'pescatarian'] as DietType[]).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.filterOption,
+                    selectedDietType === type && styles.filterOptionActive,
+                  ]}
+                  onPress={() => setSelectedDietType(type)}
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      selectedDietType === type && styles.filterOptionTextActive,
+                    ]}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Meal Type Selection */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>Meal Type</Text>
+            <View style={styles.filterOptions}>
+              {(['all', 'breakfast', 'lunch', 'dinner', 'snacks'] as MealType[]).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.filterOption,
+                    selectedMealType === type && styles.filterOptionActive,
+                  ]}
+                  onPress={() => setSelectedMealType(type)}
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      selectedMealType === type && styles.filterOptionTextActive,
+                    ]}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={handleGeneratePlan}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Icon name="auto-fix" size={20} color="#fff" style={{ marginRight: SPACING.xs }} />
+                <Text style={styles.applyButtonText}>Generate New Plan</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (loading && !dietPlan) {
     return (
@@ -119,13 +228,14 @@ const DietScreen = () => {
           </Text>
           <TouchableOpacity
             style={styles.generateButton}
-            onPress={handleGeneratePlan}
+            onPress={() => setShowFilters(true)}
             disabled={loading}
           >
-            <Icon name="sparkles" size={20} color="#fff" style={{ marginRight: SPACING.xs }} />
+            <Icon name="auto-fix" size={20} color="#fff" style={{ marginRight: SPACING.xs }} />
             <Text style={styles.generateButtonText}>Generate Diet Plan</Text>
           </TouchableOpacity>
         </ScrollView>
+        {renderFilterModal()}
       </SafeAreaView>
     );
   }
@@ -140,7 +250,7 @@ const DietScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>Today's Diet Plan</Text>
             <Text style={styles.headerDate}>
               {new Date(dietPlan.date).toLocaleDateString('en-US', {
@@ -149,15 +259,51 @@ const DietScreen = () => {
                 day: 'numeric',
               })}
             </Text>
+            <Text style={styles.dietTypeLabel}>{selectedDietType}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.regenerateButton}
-            onPress={handleGeneratePlan}
-            disabled={loading}
-          >
-            <Icon name="refresh" size={20} color={COLORS.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: SPACING.xs }}>
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => setShowFilters(true)}
+            >
+              <Icon name="tune" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.regenerateButton}
+              onPress={handleRefresh}
+              disabled={loading || refreshing}
+            >
+              <Icon name="refresh" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Meal Type Filter Chips */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.mealTypeFilter}
+        >
+          {(['all', 'breakfast', 'lunch', 'dinner', 'snacks'] as MealType[]).map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.mealTypeChip,
+                selectedMealType === type && styles.mealTypeChipActive,
+              ]}
+              onPress={() => setSelectedMealType(type)}
+            >
+              <Text
+                style={[
+                  styles.mealTypeChipText,
+                  selectedMealType === type && styles.mealTypeChipTextActive,
+                ]}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* Macros Summary Card */}
         <View style={styles.macrosCard}>
@@ -190,8 +336,10 @@ const DietScreen = () => {
 
         {/* Meals List */}
         <View style={styles.mealsSection}>
-          <Text style={styles.sectionTitle}>Your Meals</Text>
-          {dietPlan.meals.map((meal) => (
+          <Text style={styles.sectionTitle}>
+            {selectedMealType === 'all' ? 'Your Meals' : `Your ${getMealTimeLabel(selectedMealType)}`}
+          </Text>
+          {filteredMeals?.map((meal) => (
             <TouchableOpacity
               key={meal.id}
               style={styles.mealCard}
@@ -200,43 +348,29 @@ const DietScreen = () => {
               }}
             >
               <View style={styles.mealIconContainer}>
-                <Icon name={getMealIcon(meal.type)} size={28} color={COLORS.primary} />
+                <Icon name={getMealIcon(meal.type) as any} size={32} color={COLORS.primary} />
               </View>
-
               <View style={styles.mealContent}>
-                <Text style={styles.mealType}>{getMealTimeLabel(meal.type)}</Text>
+                <View style={styles.mealHeader}>
+                  <Text style={styles.mealType}>{getMealTimeLabel(meal.type)}</Text>
+                  <Text style={styles.mealCalories}>{meal.calories} kcal</Text>
+                </View>
                 <Text style={styles.mealName}>{meal.name}</Text>
                 <Text style={styles.mealDescription} numberOfLines={2}>
                   {meal.description}
                 </Text>
-
                 <View style={styles.mealMacros}>
-                  <View style={styles.mealMacroItem}>
-                    <Text style={styles.mealMacroValue}>{meal.calories}</Text>
-                    <Text style={styles.mealMacroLabel}>cal</Text>
-                  </View>
-                  <View style={styles.mealMacroItem}>
-                    <Text style={styles.mealMacroValue}>{meal.macros.protein}g</Text>
-                    <Text style={styles.mealMacroLabel}>protein</Text>
-                  </View>
-                  <View style={styles.mealMacroItem}>
-                    <Text style={styles.mealMacroValue}>{meal.macros.carbs}g</Text>
-                    <Text style={styles.mealMacroLabel}>carbs</Text>
-                  </View>
-                  <View style={styles.mealMacroItem}>
-                    <Text style={styles.mealMacroValue}>{meal.macros.fat}g</Text>
-                    <Text style={styles.mealMacroLabel}>fat</Text>
-                  </View>
+                  <Text style={styles.macroTag}>P: {meal.macros.protein}g</Text>
+                  <Text style={styles.macroTag}>C: {meal.macros.carbs}g</Text>
+                  <Text style={styles.macroTag}>F: {meal.macros.fat}g</Text>
                 </View>
               </View>
-
-              <Icon name="chevron-right" size={24} color={COLORS.textSecondary} />
+              <Icon name="chevron-right" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           ))}
         </View>
-
-        <View style={{ height: SPACING.xl }} />
       </ScrollView>
+      {renderFilterModal()}
     </SafeAreaView>
   );
 };
@@ -268,7 +402,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
   },
   emptyTitle: {
-    fontSize: FONT_SIZES.xxl,
+    fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
     color: COLORS.text,
     marginTop: SPACING.md,
@@ -282,16 +416,11 @@ const styles = StyleSheet.create({
   },
   generateButton: {
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
     borderRadius: RADIUS.round,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    alignItems: 'center',
   },
   generateButtonText: {
     color: '#fff',
@@ -301,39 +430,68 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    paddingTop: SPACING.md,
+    alignItems: 'flex-start',
+    padding: SPACING.md,
   },
   headerTitle: {
-    fontSize: FONT_SIZES.xxl,
+    fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
     color: COLORS.text,
   },
   headerDate: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginTop: 4,
+    marginTop: SPACING.xs,
+  },
+  dietTypeLabel: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.primary,
+    marginTop: SPACING.xs,
+    textTransform: 'capitalize',
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.round,
+    backgroundColor: COLORS.card,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   regenerateButton: {
     width: 40,
     height: 40,
     borderRadius: RADIUS.round,
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  mealTypeFilter: {
+    paddingHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  mealTypeChip: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.round,
+    backgroundColor: COLORS.card,
+    marginRight: SPACING.sm,
+  },
+  mealTypeChipActive: {
+    backgroundColor: COLORS.primary,
+  },
+  mealTypeChipText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.text,
+  },
+  mealTypeChipTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
   macrosCard: {
-    backgroundColor: COLORS.surface,
-    margin: SPACING.lg,
-    marginTop: SPACING.sm,
-    padding: SPACING.lg,
+    backgroundColor: COLORS.card,
+    margin: SPACING.md,
+    padding: SPACING.md,
     borderRadius: RADIUS.lg,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   macrosHeader: {
     flexDirection: 'row',
@@ -349,20 +507,16 @@ const styles = StyleSheet.create({
   caloriesBadge: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.round,
   },
   caloriesText: {
     fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
     color: COLORS.primary,
-    marginRight: 4,
   },
   caloriesLabel: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
+    color: COLORS.textSecondary,
+    marginLeft: SPACING.xs,
   },
   macrosGrid: {
     flexDirection: 'row',
@@ -372,19 +526,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   macroValue: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: 'bold',
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '600',
     color: COLORS.text,
     marginTop: SPACING.xs,
   },
   macroLabel: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginTop: 2,
+    marginTop: SPACING.xs,
   },
   mealsSection: {
-    padding: SPACING.lg,
-    paddingTop: SPACING.sm,
+    padding: SPACING.md,
   },
   sectionTitle: {
     fontSize: FONT_SIZES.lg,
@@ -394,21 +547,17 @@ const styles = StyleSheet.create({
   },
   mealCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.card,
     padding: SPACING.md,
     borderRadius: RADIUS.lg,
     marginBottom: SPACING.md,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    alignItems: 'center',
   },
   mealIconContainer: {
     width: 56,
     height: 56,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.primaryLight,
+    borderRadius: RADIUS.lg,
+    backgroundColor: `${COLORS.primary}15`,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -416,42 +565,116 @@ const styles = StyleSheet.create({
   mealContent: {
     flex: 1,
   },
+  mealHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
   mealType: {
     fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
     color: COLORS.primary,
+    fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  },
+  mealCalories: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
   mealName: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
     color: COLORS.text,
-    marginTop: 2,
+    marginBottom: SPACING.xs,
   },
   mealDescription: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginTop: 4,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   mealMacros: {
     flexDirection: 'row',
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
-  mealMacroItem: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  mealMacroValue: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginRight: 2,
-  },
-  mealMacroLabel: {
+  macroTag: {
     fontSize: FONT_SIZES.xs,
     color: COLORS.textSecondary,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xl,
+  },
+  modalTitle: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  filterSection: {
+    marginBottom: SPACING.xl,
+  },
+  filterLabel: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  filterOption: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  filterOptionActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterOptionText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.text,
+  },
+  filterOptionTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  applyButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.md,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
   },
 });
 

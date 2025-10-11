@@ -6,11 +6,14 @@ export interface User {
   photoURL?: string;
   isGuest?: boolean;
   profile: UserProfile;
+  friends?: string[]; // user IDs for social features
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface UserProfile {
+  displayName?: string; // User's display name
+  photoURL?: string; // User's avatar URL
   age?: number;
   weight?: number; // in kg
   height?: number; // in cm
@@ -20,9 +23,12 @@ export interface UserProfile {
   allergies: string[];
   goals: string[];
   points: number;
+  weeklyPoints?: number; // Points earned this week
+  monthlyPoints?: number; // Points earned this month
   level: number;
   badges: Badge[];
   streakDays: number;
+  currentStreak?: number; // Current habit streak
   longestStreak: number;
   isPremium: boolean;
   inviteCode: string;
@@ -109,6 +115,54 @@ export interface Badge {
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   unlockedAt?: Date;
 }
+
+// Daily Challenge Types
+export interface DailyChallenge {
+  id: string;
+  type: 'daily' | 'weekly';
+  title: string;
+  description: string;
+  icon: string;
+  goal: ChallengeGoal;
+  reward: Reward;
+  startDate: Date;
+  endDate: Date;
+  isActive: boolean;
+}
+
+export interface ChallengeGoal {
+  type: 'complete_habits' | 'maintain_streak' | 'earn_points' | 'complete_category' | 'social_interaction';
+  target: number; // Target value to achieve
+  category?: HabitCategory; // For category-specific challenges
+  current?: number; // Current progress
+}
+
+export interface UserChallenge {
+  id: string;
+  userId: string;
+  challengeId: string;
+  challenge: DailyChallenge;
+  progress: number; // 0-100
+  isCompleted: boolean;
+  isClaimed: boolean; // Reward claimed
+  completedAt?: Date;
+  claimedAt?: Date;
+}
+
+// Leaderboard Types
+export interface LeaderboardEntry {
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  rank: number;
+  points: number;
+  streak: number;
+  level: number;
+  weeklyPoints?: number;
+  monthlyPoints?: number;
+}
+
+export type LeaderboardPeriod = 'all-time' | 'weekly' | 'monthly' | 'friends';
 
 // Social Types
 export interface Post {
@@ -248,8 +302,12 @@ export type RootStackParamList = {
   EditHabit: { habitId: string };
   ChallengeDetail: { challengeId: string };
   CreateChallenge: undefined;
+  Challenges: undefined;
+  Leaderboard: undefined;
+  BadgeShowcase: undefined;
   UserProfile: { userId: string };
   FriendsList: undefined;
+  SearchUsers: undefined;
   DietPlan: { date?: string };
   RecipeDetail: { meal: Meal };
   ShoppingList: { weekStartDate?: string };

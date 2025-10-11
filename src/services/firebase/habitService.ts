@@ -20,6 +20,8 @@ import { db } from './config';
 import { Habit, HabitCompletion } from '@/types';
 import { getCurrentUser } from './authService';
 import { calculateStreak, getStartOfDay } from '@/utils/helpers';
+import { checkAndUpdateChallenges } from './challengeService';
+import { awardPoints, updateUserLevel } from './userService';
 
 /**
  * Create a new habit for the current user
@@ -121,6 +123,7 @@ export const deleteHabit = async (habitId: string): Promise<void> => {
 
 /**
  * Toggle habit completion for a specific date
+ * Allows multiple completions per day - each toggle completion awards points
  */
 export const toggleHabitCompletion = async (habitId: string, date: Date = new Date()): Promise<void> => {
   const user = await getCurrentUser();
@@ -128,7 +131,11 @@ export const toggleHabitCompletion = async (habitId: string, date: Date = new Da
 
   const dateStr = getStartOfDay(date).toISOString();
   
-  // Check if completion already exists
+  // Get habit details for challenge updates
+  const habit = await getHabitById(habitId);
+  if (!habit) throw new Error('Habit not found');
+
+  // Check if completion already exists FOR THIS SPECIFIC DATE
   const q = query(
     collection(db, 'habitCompletions'),
     where('habitId', '==', habitId),
@@ -138,17 +145,39 @@ export const toggleHabitCompletion = async (habitId: string, date: Date = new Da
   const existingCompletion = await getDocs(q);
 
   if (!existingCompletion.empty) {
-    // Remove completion
+    // Remove completion (uncheck)
     const completionRef = doc(db, 'habitCompletions', existingCompletion.docs[0].id);
     await deleteDoc(completionRef);
+    
+    // Only deduct points if user currently has points (prevent negative)
+    try {
+      await awardPoints(-10, 'habit_uncompleted');
+    } catch (error) {
+      console.error('Error deducting points:', error);
+    }
   } else {
-    // Add completion
+    // Add completion (check) - ALWAYS allow this and award points
     await addDoc(collection(db, 'habitCompletions'), {
       habitId,
       userId: user.id,
       date: dateStr,
       completedAt: new Date(),
     });
+
+    // Award points for completing habit - EVERY TIME
+    try {
+      await awardPoints(10, 'habit_completed');
+    } catch (error) {
+      console.error('Error awarding points:', error);
+    }
+
+    // Update challenges when habit is completed (not when uncompleted)
+    try {
+      await checkAndUpdateChallenges(habit.category);
+    } catch (error) {
+      console.error('Error updating challenges:', error);
+      // Don't fail habit completion if challenge update fails
+    }
   }
 
   // Update habit streaks
