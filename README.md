@@ -1,540 +1,1078 @@
-# 🌱 Rootine - Lifestyle & Wellness App# 🌱 Rootine - Lifestyle & Wellness App
+# 🌱 Rootine - Lifestyle & Wellness App# 🌱 Rootine - Lifestyle & Wellness App# 🌱 Rootine - Lifestyle & Wellness App
 
 
 
-<div align="center">Rootine is a comprehensive lifestyle application built with React Native and Expo that helps people build better habits, stay consistent with their goals, and improve their health through a socially gamified experience combined with a personalized AI-powered diet and recipe assistant.
+<div align="center">
 
 
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)## ✨ Features
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)<div align="center">Rootine is a comprehensive lifestyle application built with React Native and Expo that helps people build better habits, stay consistent with their goals, and improve their health through a socially gamified experience combined with a personalized AI-powered diet and recipe assistant.
 
 ![Expo](https://img.shields.io/badge/Expo-54.0.13-000020.svg?style=flat&logo=expo)
 
-![React Native](https://img.shields.io/badge/React%20Native-0.81.4-61DAFB.svg?style=flat&logo=react)### 🎯 Core Features
+![React Native](https://img.shields.io/badge/React%20Native-0.81.4-61DAFB.svg?style=flat&logo=react)
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7.0-3178C6.svg?style=flat&logo=typescript)- **Habit Tracking** - Create and track daily habits with streak counters and progress calendars
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7.0-3178C6.svg?style=flat&logo=typescript)
 
-![Firebase](https://img.shields.io/badge/Firebase-11.2.0-FFCA28.svg?style=flat&logo=firebase)- **Social Community** - Connect with friends, share progress, and compete on leaderboards
-
-- **Challenges & Gamification** - Join challenges, earn badges, collect points, and level up
-
-**A comprehensive lifestyle application that helps you build better habits, stay consistent with your goals, and improve your health through gamification and AI-powered personalization.**- **AI Diet Assistant** - Get personalized meal plans and recipes powered by Google Gemini AI
-
-- **Progress Analytics** - Track your improvement over time with detailed statistics
-
-[Features](#-features) • [Getting Started](#-getting-started) • [Installation](#-installation) • [Configuration](#-configuration) • [Usage](#-usage) • [Contributing](#-contributing)- **Push Notifications** - Never miss a habit with customizable reminders
+![Firebase](https://img.shields.io/badge/Firebase-11.2.0-FFCA28.svg?style=flat&logo=firebase)![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)## ✨ Features
 
 
 
-</div>### 🍎 AI-Powered Nutrition
-
-- Personalized vegetarian diet plans based on your profile
-
----- Custom recipe generation with step-by-step instructions
-
-- Nutritional breakdowns (calories, macros)
-
-## 📱 About- Weekly shopping list generation
-
-- Meal suggestions based on preferences and dietary restrictions
-
-Rootine is a full-featured React Native application built with Expo that combines:
-
-- 🎯 **Habit Tracking** with streaks and progress visualization### 👥 Social Features
-
-- 👥 **Social Features** - connect with friends and share progress- Add friends via invite codes
-
-- 🏆 **Gamification** - points, levels, badges, and achievements- Public feed with posts and photos
-
-- 🍎 **AI-Powered Nutrition** - personalized diet plans using Google Gemini AI- Like and comment on friends' progress
-
-- 📊 **Analytics** - track your improvement over time- Leaderboards with points and streaks
-
-- 🔔 **Smart Notifications** - never miss a habit- Challenge friends to compete
+**A comprehensive lifestyle application that helps you build better habits, stay consistent with your goals, and improve your health through gamification and AI-powered personalization.**![Expo](https://img.shields.io/badge/Expo-54.0.13-000020.svg?style=flat&logo=expo)
 
 
 
----### 🏆 Gamification
-
-- Points system for completing habits
-
-## ✨ Features- Level progression
-
-- Badge collection
-
-### 🎯 Habit Tracking- Achievement unlocking
-
-- ✅ Create custom daily habits- Streak rewards
-
-- 📅 Visual progress calendar
-
-- 🔥 Streak counter and tracking## 🚀 Getting Started
-
-- 📈 Completion statistics
-
-- ⏰ Customizable reminders### Prerequisites
+</div>![React Native](https://img.shields.io/badge/React%20Native-0.81.4-61DAFB.svg?style=flat&logo=react)### 🎯 Core Features
 
 
 
-### 🍎 AI-Powered Diet Assistant- Node.js (v16 or later)
-
-- 🤖 **Powered by Google Gemini 2.0 Flash**- npm or yarn
-
-- 🥗 Personalized meal plans (breakfast, lunch, dinner, snacks)- Expo CLI: `npm install -g expo-cli`
-
-- 🌱 Multiple diet types: Vegetarian, Non-Veg, Vegan, Pescatarian- iOS Simulator (Mac only) or Android Studio
-
-- 🔄 Infinite variety with AI-generated suggestions- Firebase account
-
-- 📝 Detailed recipes with step-by-step instructions- Google Gemini API key
-
-- 💪 Nutritional information (calories, protein, carbs, fats)
-
-- 🛒 Shopping list generation### Installation
+---![TypeScript](https://img.shields.io/badge/TypeScript-5.7.0-3178C6.svg?style=flat&logo=typescript)- **Habit Tracking** - Create and track daily habits with streak counters and progress calendars
 
 
 
-### 👥 Social Community1. **Clone the repository**
+## 📱 About![Firebase](https://img.shields.io/badge/Firebase-11.2.0-FFCA28.svg?style=flat&logo=firebase)- **Social Community** - Connect with friends, share progress, and compete on leaderboards
 
-- 👫 Add friends via unique invite codes   ```bash
 
-- 📰 Public feed with posts and updates   cd Rootine
 
-- 📸 Share photos of your progress   ```
+Rootine is a full-featured React Native mobile application built with Expo that combines habit tracking, social features, and AI-powered nutrition planning to help users achieve their wellness goals.- **Challenges & Gamification** - Join challenges, earn badges, collect points, and level up
+
+
+
+### Key Highlights**A comprehensive lifestyle application that helps you build better habits, stay consistent with your goals, and improve your health through gamification and AI-powered personalization.**- **AI Diet Assistant** - Get personalized meal plans and recipes powered by Google Gemini AI
+
+- 🎯 **Smart Habit Tracking** with streaks and visual progress
+
+- 👥 **Social Community** to connect and compete with friends- **Progress Analytics** - Track your improvement over time with detailed statistics
+
+- 🏆 **Gamification** with points, levels, badges, and challenges
+
+- 🍎 **AI Diet Plans** powered by Google Gemini 2.0 Flash[Features](#-features) • [Getting Started](#-getting-started) • [Installation](#-installation) • [Configuration](#-configuration) • [Usage](#-usage) • [Contributing](#-contributing)- **Push Notifications** - Never miss a habit with customizable reminders
+
+- 📊 **Analytics** to track improvement over time
+
+- 🔔 **Smart Notifications** to stay on track
+
+
+
+---</div>### 🍎 AI-Powered Nutrition
+
+
+
+## ✨ Features- Personalized vegetarian diet plans based on your profile
+
+
+
+### 🎯 Habit Management---- Custom recipe generation with step-by-step instructions
+
+- ✅ Create and customize daily habits
+
+- 📅 Visual progress calendar with completion tracking- Nutritional breakdowns (calories, macros)
+
+- 🔥 Streak counter to maintain consistency
+
+- 📈 Detailed completion statistics and trends## 📱 About- Weekly shopping list generation
+
+- ⏰ Customizable push notification reminders
+
+- 📝 Notes and reflections for each habit- Meal suggestions based on preferences and dietary restrictions
+
+
+
+### 🍎 AI-Powered Nutrition AssistantRootine is a full-featured React Native application built with Expo that combines:
+
+- 🤖 **Powered by Google Gemini 2.0 Flash AI**
+
+- 🥗 Personalized meal plans tailored to your profile- 🎯 **Habit Tracking** with streaks and progress visualization### 👥 Social Features
+
+- 🌱 **Multiple diet preferences**: Vegetarian, Non-Vegetarian, Vegan, Pescatarian
+
+- 🍳 **Meal type filtering**: Breakfast, Lunch, Dinner, Snacks, or All- 👥 **Social Features** - connect with friends and share progress- Add friends via invite codes
+
+- 🔄 **Infinite variety** - AI generates different meals every time
+
+- 📝 Detailed recipes with step-by-step cooking instructions- 🏆 **Gamification** - points, levels, badges, and achievements- Public feed with posts and photos
+
+- 💪 Complete nutritional breakdown (calories, protein, carbs, fats)
+
+- 🛒 Automatic shopping list generation- 🍎 **AI-Powered Nutrition** - personalized diet plans using Google Gemini AI- Like and comment on friends' progress
+
+
+
+### 👥 Social Features- 📊 **Analytics** - track your improvement over time- Leaderboards with points and streaks
+
+- 👫 Add friends using unique invite codes
+
+- 📰 Public feed to share progress and achievements- 🔔 **Smart Notifications** - never miss a habit- Challenge friends to compete
+
+- 📸 Post photos of your meals and workout progress
 
 - ❤️ Like and comment on friends' posts
 
-- 🏆 Compete on leaderboards2. **Install dependencies**
+- 🏆 Compete on leaderboards (daily, weekly, all-time)
 
-- 👀 View friends' profiles and streaks   ```bash
+- 👀 View friends' profiles, habits, and streaks---### 🏆 Gamification
 
-   npm install
+- 🎯 Challenge friends to friendly competitions
 
-### 🏆 Gamification System   ```
+- Points system for completing habits
 
-- ⭐ **Points System**: Earn 10 XP per habit completion
+### 🏆 Gamification System
 
-- 📊 **Level Progression**: Level up as you earn points3. **Set up environment variables**
+- ⭐ **Experience Points**: Earn 10 XP for each habit completion## ✨ Features- Level progression
 
-- 🏅 **Badges & Achievements**: Unlock special rewards   
+- 📊 **Level Progression**: Level up as you accumulate points
 
-- 🎯 **Challenges**: Join time-limited challenges   Copy `.env.example` to `.env`:
+- 🏅 **Badges & Achievements**: Unlock special rewards for milestones- Badge collection
 
-- 📊 **Leaderboards**: Daily, weekly, and all-time rankings   ```bash
+- 🎯 **Challenges**: Join time-limited challenges with rewards
 
-- 🔥 **Streak Bonuses**: Extra rewards for consistency   copy .env.example .env
+- 📊 **Leaderboards**: See how you rank against friends### 🎯 Habit Tracking- Achievement unlocking
 
-   ```
+- 🔥 **Streak Bonuses**: Extra rewards for maintaining consistency
 
-### ⚙️ Settings & Customization
+- 💎 **Multiple XP gains**: Earn points every time you complete a habit- ✅ Create custom daily habits- Streak rewards
 
-- 👤 Profile management   Update `.env` with your credentials:
 
-- 🔔 Notification preferences   ```env
 
-- 🎵 Sound effects toggle   # Firebase Configuration
+### ⚙️ Settings & Customization- 📅 Visual progress calendar
 
-- 📳 Haptic feedback control   EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+- 👤 Profile management with avatar and stats
 
-- 🌙 Theme preferences (Light mode, Dark mode coming soon)   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+- 🔔 Notification preferences (push, daily reminders, weekly reports)- 🔥 Streak counter and tracking## 🚀 Getting Started
 
-- 🌍 Language selection (English, more coming)   EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+- 🎵 Sound effects toggle
 
-- 💾 Data export and backup   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+- 📳 Haptic feedback control- 📈 Completion statistics
 
-- 🔒 Privacy and security settings   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+- 🌙 Theme selection (Light mode available, Dark mode coming soon)
 
-   EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+- 🌍 Language preferences (English, more languages coming)- ⏰ Customizable reminders### Prerequisites
+
+- 💾 Data export and backup options
+
+- 🔒 Privacy and security settings
+
+- 🗑️ Account management (sign out, delete account)
+
+### 🍎 AI-Powered Diet Assistant- Node.js (v16 or later)
 
 ---
 
-   # Gemini API
+- 🤖 **Powered by Google Gemini 2.0 Flash**- npm or yarn
 
-## 🚀 Getting Started   EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+## 🚀 Getting Started
 
-   ```
+- 🥗 Personalized meal plans (breakfast, lunch, dinner, snacks)- Expo CLI: `npm install -g expo-cli`
 
 ### Prerequisites
 
-4. **Set up Firebase**
+- 🌱 Multiple diet types: Vegetarian, Non-Veg, Vegan, Pescatarian- iOS Simulator (Mac only) or Android Studio
 
-Before you begin, ensure you have the following installed:   
+Ensure you have the following installed:
 
-   a. Create a new Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+- 🔄 Infinite variety with AI-generated suggestions- Firebase account
 
-- **Node.js** (v16 or later) - [Download](https://nodejs.org/)   
+- **Node.js** (v16 or later) - [Download](https://nodejs.org/)
 
-- **npm** or **yarn** - Comes with Node.js   b. Enable Authentication:
+- **npm** or **yarn** - Comes with Node.js- 📝 Detailed recipes with step-by-step instructions- Google Gemini API key
 
-- **Git** - [Download](https://git-scm.com/)      - Go to Authentication > Sign-in method
+- **Git** - [Download](https://git-scm.com/)
 
-- **Expo CLI** (optional, but recommended)      - Enable Email/Password
+- **Expo CLI** (optional but recommended)- 💪 Nutritional information (calories, protein, carbs, fats)
 
   ```bash
 
-  npm install -g expo-cli   c. Create Firestore Database:
+  npm install -g expo-cli- 🛒 Shopping list generation### Installation
 
-  ```      - Go to Firestore Database
-
-      - Create database in production mode
-
-For mobile development:      - Set up security rules (see `firebase.rules` below)
-
-- **Android Studio** (for Android development)
-
-- **Xcode** (for iOS development - Mac only)   d. Enable Storage:
-
-      - Go to Storage
-
-### Required Accounts & API Keys      - Get started with default security rules
+  ```
 
 
 
-You'll need to set up the following:5. **Get Gemini API Key**
+**For Mobile Development:**
 
-   
+- **Android Studio** (for Android emulator)### 👥 Social Community1. **Clone the repository**
 
-1. **Firebase Account** - [Get Started](https://firebase.google.com/)   Visit [Google AI Studio](https://makersuite.google.com/app/apikey) to get your API key.
+- **Xcode** (for iOS simulator - Mac only)
 
-   - Create a new Firebase project
+- 👫 Add friends via unique invite codes   ```bash
 
-   - Enable Authentication (Email/Password)### Firebase Security Rules
+### Required API Keys & Services
 
-   - Enable Firestore Database
+- 📰 Public feed with posts and updates   cd Rootine
 
-   - Get your Firebase configuration**Firestore Rules** (`firestore.rules`):
+1. **Firebase** - [Get Started](https://firebase.google.com/)
 
-```
+   - Create a Firebase project- 📸 Share photos of your progress   ```
 
-2. **Google Gemini API Key** - [Get API Key](https://ai.google.dev/)rules_version = '2';
+   - Enable Email/Password Authentication
 
-   - Sign up for Google AI Studioservice cloud.firestore {
+   - Enable Firestore Database- ❤️ Like and comment on friends' posts
 
-   - Generate an API key for Gemini  match /databases/{database}/documents {
+   - Get your Firebase configuration
 
-    match /users/{userId} {
+- 🏆 Compete on leaderboards2. **Install dependencies**
 
-3. **Expo Account** (for building APK/IPA) - [Sign Up](https://expo.dev/)      allow read: if request.auth != null;
+2. **Google Gemini API** - [Get API Key](https://ai.google.dev/)
 
-      allow write: if request.auth.uid == userId;
+   - Sign up for Google AI Studio- 👀 View friends' profiles and streaks   ```bash
 
----    }
+   - Generate an API key for Gemini 2.0
 
-    
+   npm install
 
-## 📥 Installation    match /habits/{habitId} {
+3. **Expo Account** - [Sign Up](https://expo.dev/)
 
-      allow read: if request.auth != null;
+   - Required for building APK/IPA files### 🏆 Gamification System   ```
 
-### 1. Clone the Repository      allow write: if request.auth.uid == resource.data.userId;
 
-    }
 
-```bash    
+---- ⭐ **Points System**: Earn 10 XP per habit completion
 
-git clone https://github.com/YOUR_USERNAME/rootine.git    match /posts/{postId} {
 
-cd rootine      allow read: if request.auth != null;
 
-```      allow create: if request.auth != null;
+## 📥 Installation- 📊 **Level Progression**: Level up as you earn points3. **Set up environment variables**
 
-      allow update, delete: if request.auth.uid == resource.data.userId;
 
-### 2. Install Dependencies    }
 
-  }
+### 1. Clone the Repository- 🏅 **Badges & Achievements**: Unlock special rewards   
 
-```bash}
 
-npm install```
+
+```bash- 🎯 **Challenges**: Join time-limited challenges   Copy `.env.example` to `.env`:
+
+git clone https://github.com/shiv989898/Rootine.git
+
+cd Rootine- 📊 **Leaderboards**: Daily, weekly, and all-time rankings   ```bash
 
 ```
 
-**Storage Rules** (`storage.rules`):
+- 🔥 **Streak Bonuses**: Extra rewards for consistency   copy .env.example .env
 
-Or with yarn:```
-
-```bashrules_version = '2';
-
-yarn installservice firebase.storage {
-
-```  match /b/{bucket}/o {
-
-    match /users/{userId}/{allPaths=**} {
-
-### 3. Configure Environment Variables      allow read: if request.auth != null;
-
-      allow write: if request.auth.uid == userId;
-
-Create a `.env` file in the root directory:    }
-
-  }
-
-```env}
-
-# Firebase Configuration```
-
-EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com### Running the App
-
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com1. **Start the development server**
-
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id   ```bash
-
-EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id   npm start
-
-EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id   ```
-
-
-
-# Google Gemini AI2. **Run on iOS Simulator** (Mac only)
-
-EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key   ```bash
-
-   npm run ios
-
-# Environment   ```
-
-EXPO_PUBLIC_ENV=development
-
-```3. **Run on Android Emulator**
-
-   ```bash
-
-### 4. Set Up Firebase   npm run android
+### 2. Install Dependencies
 
    ```
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
+```bash
 
-2. Create a new project or use existing one4. **Run on Web**
-
-3. Enable **Authentication**:   ```bash
-
-   - Go to Authentication → Sign-in method   npm run web
-
-   - Enable "Email/Password"   ```
-
-4. Enable **Firestore Database**:
-
-   - Go to Firestore Database5. **Using Expo Go** (Recommended for testing)
-
-   - Create database in production mode   - Install Expo Go app on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
-
-   - Set up security rules (see [Firebase Rules](#firebase-security-rules))   - Scan the QR code from the terminal
-
-5. Add your app:
-
-   - Click "Add app" → Web## 📱 App Structure
-
-   - Copy the configuration values to your `.env` file
+npm install### ⚙️ Settings & Customization
 
 ```
 
-### 5. Verify InstallationRootine/
+- 👤 Profile management   Update `.env` with your credentials:
 
-├── App.tsx                 # Main app entry point
+Or with yarn:
 
-Run the dependency checker:├── src/
+```bash- 🔔 Notification preferences   ```env
 
-│   ├── screens/            # Screen components
+yarn install
 
-```bash│   │   ├── auth/          # Authentication screens
-
-npx expo-doctor│   │   │   ├── OnboardingScreen.tsx
-
-```│   │   │   ├── LoginScreen.tsx
-
-│   │   │   ├── SignupScreen.tsx
-
-You should see: `✅ 17/17 checks passed. No issues detected!`│   │   │   └── ProfileSetupScreen.tsx
-
-│   │   └── main/          # Main app screens
-
----│   │       ├── HomeScreen.tsx
-
-│   │       ├── HabitsScreen.tsx
-
-## 🎮 Usage│   │       ├── FeedScreen.tsx
-
-│   │       ├── DietScreen.tsx
-
-### Development Mode│   │       └── ProfileScreen.tsx
-
-│   ├── components/         # Reusable components
-
-Start the Expo development server:│   ├── contexts/          # React contexts
-
-│   │   └── AuthContext.tsx
-
-```bash│   ├── services/          # API and external services
-
-npm start│   │   ├── firebase/      # Firebase services
-
-# or│   │   │   ├── config.ts
-
-npx expo start│   │   │   └── authService.ts
-
-```│   │   └── api/           # External APIs
-
-│   │       └── geminiService.ts
-
-This will open Expo DevTools in your browser. You can then:│   ├── utils/             # Utility functions
-
-- Press `a` to open on Android emulator│   │   ├── helpers.ts
-
-- Press `i` to open on iOS simulator│   │   └── notifications.ts
-
-- Scan QR code with Expo Go app on your phone│   ├── types/             # TypeScript types
-
-│   │   └── index.ts
-
-### Running on Android│   └── constants/         # App constants
-
-│       └── theme.ts
-
-```bash├── assets/                # Images, fonts, etc.
-
-npm run android├── app.json              # Expo configuration
-
-# or├── package.json          # Dependencies
-
-npx expo run:android└── tsconfig.json         # TypeScript configuration
-
-``````
+```- 🎵 Sound effects toggle   # Firebase Configuration
 
 
 
-### Running on iOS (Mac only)## 🎨 Tech Stack
+### 3. Configure Environment Variables- 📳 Haptic feedback control   EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 
 
 
-```bash- **Framework**: React Native with Expo
+Create a `.env` file in the root directory (use `.env.example` as template):- 🌙 Theme preferences (Light mode, Dark mode coming soon)   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 
-npm run ios- **Language**: TypeScript
 
-# or- **Navigation**: React Navigation
 
-npx expo run:ios- **UI Library**: React Native Paper
+```env- 🌍 Language selection (English, more coming)   EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 
-```- **State Management**: React Context API
+# Firebase Configuration
 
-- **Backend**: Firebase (Auth, Firestore, Storage)
+EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key- 💾 Data export and backup   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 
-### Building APK for Android- **AI**: Google Gemini API
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 
-- **Notifications**: Expo Notifications
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id- 🔒 Privacy and security settings   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 
-Using EAS Build (recommended):- **Image Handling**: Expo Image Picker
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 
-- **Date Handling**: date-fns
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id   EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id---
+
+
+
+# Google Gemini AI   # Gemini API
+
+EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+
+## 🚀 Getting Started   EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+
+# Environment
+
+EXPO_PUBLIC_ENV=development   ```
+
+```
+
+### Prerequisites
+
+### 4. Set Up Firebase
+
+4. **Set up Firebase**
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+
+2. Create a new projectBefore you begin, ensure you have the following installed:   
+
+3. **Enable Authentication**:
+
+   - Navigate to Authentication → Sign-in method   a. Create a new Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+
+   - Enable "Email/Password" provider
+
+4. **Enable Firestore Database**:- **Node.js** (v16 or later) - [Download](https://nodejs.org/)   
+
+   - Navigate to Firestore Database
+
+   - Create database in production mode- **npm** or **yarn** - Comes with Node.js   b. Enable Authentication:
+
+   - Add security rules (see [Firebase Configuration](#firebase-configuration))
+
+5. **Get Configuration**:- **Git** - [Download](https://git-scm.com/)      - Go to Authentication > Sign-in method
+
+   - Go to Project Settings
+
+   - Under "Your apps", add a Web app- **Expo CLI** (optional, but recommended)      - Enable Email/Password
+
+   - Copy the configuration values to your `.env` file
+
+  ```bash
+
+### 5. Verify Installation
+
+  npm install -g expo-cli   c. Create Firestore Database:
+
+Run the health check:
+
+  ```      - Go to Firestore Database
 
 ```bash
 
-# Install EAS CLI## 📋 Available Scripts
+npx expo-doctor      - Create database in production mode
 
-npm install -g eas-cli
+```
 
-- `npm start` - Start Expo development server
+For mobile development:      - Set up security rules (see `firebase.rules` below)
 
-# Login to Expo- `npm run android` - Run on Android
+Expected output: `✅ 17/17 checks passed. No issues detected!`
 
-eas login- `npm run ios` - Run on iOS
+- **Android Studio** (for Android development)
 
-- `npm run web` - Run on web
+---
 
-# Configure EAS- `npm run lint` - Run ESLint
+- **Xcode** (for iOS development - Mac only)   d. Enable Storage:
 
-eas build:configure- `npm run type-check` - Run TypeScript type checking
+## 🎮 Usage
 
+      - Go to Storage
 
+### Development Mode
 
-# Build APK## 🔑 Key Concepts
+### Required Accounts & API Keys      - Get started with default security rules
 
-npx eas build --profile preview-apk --platform android --non-interactive
-
-```### User Profile
-
-Users can create profiles with:
-
-The build will take 10-30 minutes. You'll get a download URL when complete.- Personal information (age, weight, height, gender)
-
-- Activity level (sedentary to extra active)
-
----- Dietary preferences (vegetarian, vegan, etc.)
-
-- Allergies and food restrictions
-
-## 🔧 Configuration- Health and fitness goals
+Start the Expo development server:
 
 
 
-### Firebase Security Rules### Habit System
+```bash
 
-- Create custom habits with recurrence patterns
+npm startYou'll need to set up the following:5. **Get Gemini API Key**
 
-Add these rules to your Firestore Database:- Track completion with streak counters
+```
 
-- Set reminders for habits
+   
 
-```javascript- View progress on calendar
+This will open Expo DevTools. You can then:
 
-rules_version = '2';- Earn points for consistency
+- Press `a` to open on Android emulator1. **Firebase Account** - [Get Started](https://firebase.google.com/)   Visit [Google AI Studio](https://makersuite.google.com/app/apikey) to get your API key.
 
-service cloud.firestore {
+- Press `i` to open on iOS simulator (Mac only)
 
-  match /databases/{database}/documents {### Gamification
+- Scan QR code with **Expo Go** app on your physical device   - Create a new Firebase project
 
-    // Users collection- **Points**: Earn by completing habits, posting updates, etc.
 
-    match /users/{userId} {- **Levels**: Increase level every 100 points
 
-      allow read: if request.auth != null;- **Badges**: Unlock achievements for milestones
+### Running on Android   - Enable Authentication (Email/Password)### Firebase Security Rules
 
-      allow write: if request.auth != null && request.auth.uid == userId;- **Streaks**: Track consecutive days of habit completion
 
-    }
 
-    ### AI Diet Plans
+```bash   - Enable Firestore Database
 
-    // Habits collectionThe app uses Google Gemini to generate:
+npm run android
 
-    match /habits/{habitId} {- Personalized daily meal plans
+```   - Get your Firebase configuration**Firestore Rules** (`firestore.rules`):
 
-      allow read: if request.auth != null;- Detailed recipes with ingredients and instructions
 
-      allow write: if request.auth != null && request.auth.uid == resource.data.userId;- Nutritional information
 
-    }- Meal variations and substitutions
+### Running on iOS (Mac only)```
 
-    - Weekly shopping lists
 
-    // Posts collection
 
-    match /posts/{postId} {## 🚧 Future Enhancements
+```bash2. **Google Gemini API Key** - [Get API Key](https://ai.google.dev/)rules_version = '2';
+
+npm run ios
+
+```   - Sign up for Google AI Studioservice cloud.firestore {
+
+
+
+### Building APK for Distribution   - Generate an API key for Gemini  match /databases/{database}/documents {
+
+
+
+```bash    match /users/{userId} {
+
+# Install EAS CLI globally
+
+npm install -g eas-cli3. **Expo Account** (for building APK/IPA) - [Sign Up](https://expo.dev/)      allow read: if request.auth != null;
+
+
+
+# Login to your Expo account      allow write: if request.auth.uid == userId;
+
+eas login
+
+---    }
+
+# Build APK
+
+npx eas build --profile preview-apk --platform android --non-interactive    
+
+```
+
+## 📥 Installation    match /habits/{habitId} {
+
+Build time: 10-30 minutes. You'll receive a download URL when complete.
 
       allow read: if request.auth != null;
 
-      allow create: if request.auth != null;- [ ] Implement habit analytics and insights
+---
 
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;- [ ] Add workout tracking integration
+### 1. Clone the Repository      allow write: if request.auth.uid == resource.data.userId;
 
-    }- [ ] Create video tutorials for habits
+## 🔧 Firebase Configuration
+
+    }
+
+### Security Rules
+
+```bash    
+
+Add these rules to your Firestore Database (Firestore → Rules):
+
+git clone https://github.com/YOUR_USERNAME/rootine.git    match /posts/{postId} {
+
+```javascript
+
+rules_version = '2';cd rootine      allow read: if request.auth != null;
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {```      allow create: if request.auth != null;
+
+    // Users collection
+
+    match /users/{userId} {      allow update, delete: if request.auth.uid == resource.data.userId;
+
+      allow read: if request.auth != null;
+
+      allow write: if request.auth != null && request.auth.uid == userId;### 2. Install Dependencies    }
+
+    }
+
+      }
+
+    // Habits collection
+
+    match /habits/{habitId} {```bash}
+
+      allow read: if request.auth != null;
+
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;npm install```
+
+    }
+
+    ```
+
+    // Posts collection (social feed)
+
+    match /posts/{postId} {**Storage Rules** (`storage.rules`):
+
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null;Or with yarn:```
+
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+    }```bashrules_version = '2';
+
+    
+
+    // Challenges collectionyarn installservice firebase.storage {
+
+    match /challenges/{challengeId} {
+
+      allow read: if request.auth != null;```  match /b/{bucket}/o {
+
+      allow write: if request.auth != null;
+
+    }    match /users/{userId}/{allPaths=**} {
+
+    
+
+    // Achievements collection### 3. Configure Environment Variables      allow read: if request.auth != null;
+
+    match /achievements/{achievementId} {
+
+      allow read: if request.auth != null;      allow write: if request.auth.uid == userId;
+
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+
+    }Create a `.env` file in the root directory:    }
+
+  }
+
+}  }
+
+```
+
+```env}
+
+---
+
+# Firebase Configuration```
+
+## 📂 Project Structure
+
+EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+
+```
+
+Rootine/EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com### Running the App
+
+├── src/
+
+│   ├── components/              # Reusable UI componentsEXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+
+│   │   ├── habits/             # Habit-related components
+
+│   │   ├── challenges/         # Challenge componentsEXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com1. **Start the development server**
+
+│   │   ├── animations/         # Animation components
+
+│   │   ├── ErrorBoundary.tsx   # Error handling componentEXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id   ```bash
+
+│   │   └── FriendCard.tsx      # Friend list item component
+
+│   ├── screens/                # Application screensEXPO_PUBLIC_FIREBASE_APP_ID=your_app_id   npm start
+
+│   │   ├── auth/              # Authentication screens
+
+│   │   │   ├── LoginScreen.tsxEXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id   ```
+
+│   │   │   ├── SignupScreen.tsx
+
+│   │   │   ├── OnboardingScreen.tsx
+
+│   │   │   └── ProfileSetupScreen.tsx
+
+│   │   ├── main/              # Main app screens# Google Gemini AI2. **Run on iOS Simulator** (Mac only)
+
+│   │   │   ├── HomeScreen.tsx
+
+│   │   │   ├── DietScreen.tsxEXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key   ```bash
+
+│   │   │   ├── ProfileScreen.tsx
+
+│   │   │   └── SettingsScreen.tsx   npm run ios
+
+│   │   ├── habits/            # Habit management screens
+
+│   │   ├── social/            # Social features screens# Environment   ```
+
+│   │   ├── challenges/        # Challenge screens
+
+│   │   ├── leaderboard/       # Leaderboard screensEXPO_PUBLIC_ENV=development
+
+│   │   └── achievements/      # Achievement screens
+
+│   ├── services/              # Business logic & API services```3. **Run on Android Emulator**
+
+│   │   ├── api/              # External API integrations
+
+│   │   │   └── geminiService.ts    # Google Gemini AI integration   ```bash
+
+│   │   └── firebase/         # Firebase services
+
+│   │       ├── config.ts          # Firebase configuration### 4. Set Up Firebase   npm run android
+
+│   │       ├── habitService.ts    # Habit CRUD operations
+
+│   │       ├── userService.ts     # User management & XP system   ```
+
+│   │       ├── challengeService.ts
+
+│   │       ├── achievementService.ts1. Go to [Firebase Console](https://console.firebase.google.com/)
+
+│   │       └── leaderboardService.ts
+
+│   ├── types/                # TypeScript type definitions2. Create a new project or use existing one4. **Run on Web**
+
+│   │   └── index.ts
+
+│   └── utils/                # Utility functions3. Enable **Authentication**:   ```bash
+
+│       └── performanceHooks.ts    # Custom React hooks
+
+├── assets/                   # Images, fonts, icons   - Go to Authentication → Sign-in method   npm run web
+
+├── .env                      # Environment variables (create this)
+
+├── .env.example             # Environment template   - Enable "Email/Password"   ```
+
+├── .gitignore
+
+├── App.tsx                   # Application entry point4. Enable **Firestore Database**:
+
+├── app.json                  # Expo configuration
+
+├── eas.json                  # EAS Build configuration   - Go to Firestore Database5. **Using Expo Go** (Recommended for testing)
+
+├── package.json              # Dependencies
+
+├── tsconfig.json             # TypeScript configuration   - Create database in production mode   - Install Expo Go app on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
+
+└── README.md                # This file
+
+```   - Set up security rules (see [Firebase Rules](#firebase-security-rules))   - Scan the QR code from the terminal
+
+
+
+---5. Add your app:
+
+
+
+## 🎨 Tech Stack   - Click "Add app" → Web## 📱 App Structure
+
+
+
+### Frontend   - Copy the configuration values to your `.env` file
+
+- **React Native** `0.81.4` - Cross-platform mobile framework
+
+- **Expo** `54.0.13` - Development platform```
+
+- **TypeScript** `5.7.0` - Type-safe JavaScript
+
+- **React Navigation** `7.0.0` - Navigation library### 5. Verify InstallationRootine/
+
+- **React Native Paper** `5.12.0` - Material Design components
+
+- **@expo/vector-icons** - Icon library├── App.tsx                 # Main app entry point
+
+
+
+### Backend & ServicesRun the dependency checker:├── src/
+
+- **Firebase Firestore** `11.2.0` - NoSQL cloud database
+
+- **Firebase Authentication** `11.2.0` - User authentication│   ├── screens/            # Screen components
+
+- **Google Gemini AI** `2.0 Flash` - AI-powered diet generation
+
+- **Expo Notifications** - Push notifications```bash│   │   ├── auth/          # Authentication screens
+
+
+
+### State Managementnpx expo-doctor│   │   │   ├── OnboardingScreen.tsx
+
+- **React Hooks** - useState, useEffect, useContext
+
+- **Firebase Realtime Listeners** - Real-time data sync```│   │   │   ├── LoginScreen.tsx
+
+- **AsyncStorage** - Local data persistence
+
+│   │   │   ├── SignupScreen.tsx
+
+### Additional Libraries
+
+- **date-fns** `4.0.0` - Date manipulationYou should see: `✅ 17/17 checks passed. No issues detected!`│   │   │   └── ProfileSetupScreen.tsx
+
+- **expo-linear-gradient** - Gradient backgrounds
+
+- **react-native-calendars** - Calendar views│   │   └── main/          # Main app screens
+
+- **react-native-gesture-handler** - Touch handling
+
+- **expo-image-picker** - Image selection---│   │       ├── HomeScreen.tsx
+
+
+
+---│   │       ├── HabitsScreen.tsx
+
+
+
+## 🐛 Troubleshooting## 🎮 Usage│   │       ├── FeedScreen.tsx
+
+
+
+### Common Issues│   │       ├── DietScreen.tsx
+
+
+
+#### "Expo command not found"### Development Mode│   │       └── ProfileScreen.tsx
+
+```bash
+
+npm install -g expo-cli│   ├── components/         # Reusable components
+
+```
+
+Start the Expo development server:│   ├── contexts/          # React contexts
+
+#### "Firebase not initialized"
+
+- Verify `.env` file exists in root directory│   │   └── AuthContext.tsx
+
+- Check all Firebase keys are correct
+
+- Restart the development server: `npm start --clear````bash│   ├── services/          # API and external services
+
+
+
+#### "Duplicate dependencies error"npm start│   │   ├── firebase/      # Firebase services
+
+```bash
+
+rm -rf node_modules package-lock.json# or│   │   │   ├── config.ts
+
+npm install
+
+npx expo-doctornpx expo start│   │   │   └── authService.ts
+
+```
+
+```│   │   └── api/           # External APIs
+
+#### "Build failed on EAS"
+
+- Run `npx expo-doctor` and fix all issues│   │       └── geminiService.ts
+
+- Verify `eas.json` configuration
+
+- Check Expo account is properly set upThis will open Expo DevTools in your browser. You can then:│   ├── utils/             # Utility functions
+
+
+
+#### "Gemini API error"- Press `a` to open on Android emulator│   │   ├── helpers.ts
+
+- Verify API key in `.env` file
+
+- Check API quota limits in Google Cloud Console- Press `i` to open on iOS simulator│   │   └── notifications.ts
+
+- Ensure Gemini API is enabled
+
+- Scan QR code with Expo Go app on your phone│   ├── types/             # TypeScript types
+
+#### "Android build issues"
+
+```bash│   │   └── index.ts
+
+cd android
+
+./gradlew clean### Running on Android│   └── constants/         # App constants
+
+cd ..
+
+npx expo run:android│       └── theme.ts
+
+```
+
+```bash├── assets/                # Images, fonts, etc.
+
+### Clean Installation
+
+npm run android├── app.json              # Expo configuration
+
+If you encounter persistent issues:
+
+# or├── package.json          # Dependencies
+
+```bash
+
+# Delete generated filesnpx expo run:android└── tsconfig.json         # TypeScript configuration
+
+rm -rf node_modules
+
+rm package-lock.json``````
+
+
+
+# Clear caches
+
+npm cache clean --force
+
+npx expo start --clear### Running on iOS (Mac only)## 🎨 Tech Stack
+
+
+
+# Reinstall dependencies
+
+npm install
+
+```bash- **Framework**: React Native with Expo
+
+# Verify installation
+
+npx expo-doctornpm run ios- **Language**: TypeScript
+
+```
+
+# or- **Navigation**: React Navigation
+
+---
+
+npx expo run:ios- **UI Library**: React Native Paper
+
+## 📝 Recent Updates (v1.0.0)
+
+```- **State Management**: React Context API
+
+### ✅ Bug Fixes
+
+- **Diet System**: Fixed meal generation variety - now provides different meals each time- **Backend**: Firebase (Auth, Firestore, Storage)
+
+- **XP System**: Fixed negative points bug - points can never go below 0
+
+- **Multiple XP Gains**: Users can now earn points multiple times from the same habit### Building APK for Android- **AI**: Google Gemini API
+
+- **Settings Screen**: Added complete settings interface with all preferences
+
+- **Dependencies**: Resolved duplicate package issues- **Notifications**: Expo Notifications
+
+- **Performance**: Optimized with React.memo for smoother scrolling
+
+Using EAS Build (recommended):- **Image Handling**: Expo Image Picker
+
+### 🆕 New Features
+
+- **Meal Type Filtering**: Select specific meal types (Breakfast, Lunch, Dinner, Snacks)- **Date Handling**: date-fns
+
+- **Diet Preferences**: Choose from 4 diet types (Vegetarian, Non-Veg, Vegan, Pescatarian)
+
+- **AI Variety System**: Infinite meal suggestions powered by seed-based AI prompts```bash
+
+- **Settings Screen**: 9 comprehensive sections for full app customization
+
+- **Auto-Level Updates**: Level automatically updates after earning XP# Install EAS CLI## 📋 Available Scripts
+
+- **Enhanced UI**: Improved animations and visual feedback
+
+npm install -g eas-cli
+
+---
+
+- `npm start` - Start Expo development server
+
+## 🤝 Contributing
+
+# Login to Expo- `npm run android` - Run on Android
+
+Contributions are welcome! Here's how you can help:
+
+eas login- `npm run ios` - Run on iOS
+
+1. **Fork the repository**
+
+2. **Create a feature branch**- `npm run web` - Run on web
+
+   ```bash
+
+   git checkout -b feature/AmazingFeature# Configure EAS- `npm run lint` - Run ESLint
+
+   ```
+
+3. **Commit your changes**eas build:configure- `npm run type-check` - Run TypeScript type checking
+
+   ```bash
+
+   git commit -m 'Add some AmazingFeature'
+
+   ```
+
+4. **Push to the branch**# Build APK## 🔑 Key Concepts
+
+   ```bash
+
+   git push origin feature/AmazingFeaturenpx eas build --profile preview-apk --platform android --non-interactive
+
+   ```
+
+5. **Open a Pull Request**```### User Profile
+
+
+
+### Development GuidelinesUsers can create profiles with:
+
+- Follow TypeScript best practices
+
+- Write clean, readable, and maintainable codeThe build will take 10-30 minutes. You'll get a download URL when complete.- Personal information (age, weight, height, gender)
+
+- Add comments for complex logic
+
+- Test on both Android and iOS- Activity level (sedentary to extra active)
+
+- Update documentation for new features
+
+- Maintain consistent code style---- Dietary preferences (vegetarian, vegan, etc.)
+
+
+
+---- Allergies and food restrictions
+
+
+
+## 📄 License## 🔧 Configuration- Health and fitness goals
+
+
+
+This project is private and not licensed for public distribution.
+
+
+
+---### Firebase Security Rules### Habit System
+
+
+
+## 👨‍💻 Author- Create custom habits with recurrence patterns
+
+
+
+**Shiv Goyal**Add these rules to your Firestore Database:- Track completion with streak counters
+
+- GitHub: [@shiv989898](https://github.com/shiv989898)
+
+- Email: shivgoyal9988@gmail.com- Set reminders for habits
+
+- Repository: [Rootine](https://github.com/shiv989898/Rootine)
+
+```javascript- View progress on calendar
+
+---
+
+rules_version = '2';- Earn points for consistency
+
+## 🙏 Acknowledgments
+
+service cloud.firestore {
+
+- **Expo Team** - For the excellent development platform and tools
+
+- **Google Gemini** - For powering our AI-driven diet recommendations  match /databases/{database}/documents {### Gamification
+
+- **Firebase** - For providing scalable backend infrastructure
+
+- **React Native Community** - For amazing libraries and continuous support    // Users collection- **Points**: Earn by completing habits, posting updates, etc.
+
+- **Contributors** - Thank you to everyone who has contributed to this project
+
+    match /users/{userId} {- **Levels**: Increase level every 100 points
+
+---
+
+      allow read: if request.auth != null;- **Badges**: Unlock achievements for milestones
+
+## 📞 Support
+
+      allow write: if request.auth != null && request.auth.uid == userId;- **Streaks**: Track consecutive days of habit completion
+
+Need help or have questions?
+
+    }
+
+1. 📖 Check the [Troubleshooting](#-troubleshooting) section above
+
+2. 🔍 Search [existing issues](https://github.com/shiv989898/Rootine/issues)    ### AI Diet Plans
+
+3. 🆕 Open a [new issue](https://github.com/shiv989898/Rootine/issues/new)
+
+4. 📧 Email: shivgoyal9988@gmail.com    // Habits collectionThe app uses Google Gemini to generate:
+
+
+
+---    match /habits/{habitId} {- Personalized daily meal plans
+
+
+
+## 🗺️ Roadmap      allow read: if request.auth != null;- Detailed recipes with ingredients and instructions
+
+
+
+### 🎯 Coming Soon      allow write: if request.auth != null && request.auth.uid == resource.data.userId;- Nutritional information
+
+- 🌙 **Dark Mode** - Full dark theme support
+
+- 🌍 **Multi-Language** - Spanish, French, Hindi, and more    }- Meal variations and substitutions
+
+- 📊 **Advanced Analytics** - Detailed insights and trends
+
+- 🎯 **Custom Challenges** - Create and share your own challenges    - Weekly shopping lists
+
+- 💬 **In-App Messaging** - Chat with friends directly
+
+- 📱 **iOS Release** - App Store deployment    // Posts collection
+
+- 🔔 **Smart Scheduling** - AI-powered notification timing
+
+- 🏋️ **Workout Tracking** - Integrate fitness routines    match /posts/{postId} {## 🚧 Future Enhancements
+
+- 💤 **Sleep Tracking** - Monitor sleep patterns
+
+- 🧘 **Meditation Timer** - Guided meditation sessions      allow read: if request.auth != null;
+
+
+
+### 🔮 Future Ideas      allow create: if request.auth != null;- [ ] Implement habit analytics and insights
+
+- Integration with health apps (Google Fit, Apple Health)
+
+- Voice commands for logging habits      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;- [ ] Add workout tracking integration
+
+- AR features for workout guidance
+
+- Community challenges with global leaderboards    }- [ ] Create video tutorials for habits
+
+- Premium subscription tier with advanced features
 
     - [ ] Build community challenges marketplace
 
+---
+
     // Challenges collection- [ ] Add Apple Health / Google Fit integration
+
+<div align="center">
 
     match /challenges/{challengeId} {- [ ] Implement payment system for premium tier
 
+**Made with ❤️ by Shiv Goyal**
+
       allow read: if request.auth != null;- [ ] Add dark mode support
+
+⭐ Star this repo if you find it helpful!
 
       allow write: if request.auth != null;- [ ] Create web dashboard
 
+[Report Bug](https://github.com/shiv989898/Rootine/issues) • [Request Feature](https://github.com/shiv989898/Rootine/issues)
+
     }- [ ] Multi-language support
+
+</div>
 
   }- [ ] Offline mode with sync
 
@@ -765,9 +1303,9 @@ This project is private and not licensed for public use.
 
 ## 👨‍💻 Author
 
-**Shiv Gopal Gautam**
-- GitHub: [@YOUR_GITHUB_USERNAME]
-- Email: your.email@example.com
+**Shiv Goyal**
+- GitHub: [@shiv989898](https://github.com/shiv989898)
+- Email: shivgoyal9988@gmail.com
 
 ---
 
@@ -785,9 +1323,9 @@ This project is private and not licensed for public use.
 If you encounter any issues or have questions:
 
 1. Check the [Troubleshooting](#-troubleshooting) section
-2. Search [existing issues](https://github.com/YOUR_USERNAME/rootine/issues)
-3. Open a [new issue](https://github.com/YOUR_USERNAME/rootine/issues/new)
-4. Contact: your.email@example.com
+2. Search [existing issues](https://github.com/shiv989898/Rootine/issues)
+3. Open a [new issue](https://github.com/shiv989898/Rootine/issues/new)
+4. Contact: shivgoyal9988@gmail.com
 
 ---
 
