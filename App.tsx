@@ -1,17 +1,20 @@
 // Import polyfills BEFORE any Firebase imports
 import 'react-native-get-random-values';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { RootStackParamList, TabParamList } from './src/types';
 import { COLORS } from './src/constants/theme';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import { initializeNotifications } from './src/services/notifications/notificationService';
 
 // Import screens
 import OnboardingScreen from './src/screens/auth/OnboardingScreen';
@@ -116,15 +119,23 @@ const RootNavigator = () => {
 
 // Main App Component
 export default function App() {
+  // Initialize notifications on app start
+  useEffect(() => {
+    initializeNotifications();
+  }, []);
+
   return (
     <ErrorBoundary>
-      <PaperProvider>
-        <AuthProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
-        </AuthProvider>
-      </PaperProvider>
+      <SafeAreaProvider>
+        <PaperProvider>
+          <AuthProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </AuthProvider>
+        </PaperProvider>
+        <Toast />
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
