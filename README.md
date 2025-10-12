@@ -133,7 +133,7 @@ EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 EXPO_PUBLIC_ENV=development
 ```
 
-> 📝 Tip: never commit `.env` — Git ignore rules are already configured.
+> ⚠️ **SECURITY**: API keys are stored in `.env` (gitignored) or EAS Secrets only. They are **NOT** committed to the repository. See [docs/SECURE_KEYS_SETUP.md](./docs/SECURE_KEYS_SETUP.md) for detailed security setup.
 
 ---
 
@@ -212,19 +212,45 @@ service cloud.firestore {
 
 ### Build Commands
 
-#### Production APK (Recommended)
+#### Using EAS Secrets (Recommended for Security)
+
+First, store your API key securely:
 ```powershell
-npm run build:android
-# or
-eas build --platform android --profile production
+# Install EAS CLI (if not already installed)
+npm install -g eas-cli
+
+# Login
+eas login
+
+# Store API key as secret
+eas secret:create --scope project --name EXPO_PUBLIC_GEMINI_API_KEY --value "your_api_key_here" --type string
 ```
 
-#### Preview APK (Testing)
+Then build:
 ```powershell
+# Production APK
+npm run build:android
+
+# Preview APK
 npm run build:preview
-# or
-eas build --platform android --profile preview
 ```
+
+#### Alternative: Local Build (Development Only)
+
+⚠️ **Warning**: Only for local testing, **not for distribution**
+
+```powershell
+# Create local config with your keys
+cp eas.json.example eas.json.local
+# Edit eas.json.local and add your API keys
+
+# Build locally
+eas build --platform android --profile production --local
+```
+
+**Note**: `eas.json.local` is gitignored and will NOT be committed.
+
+For complete security setup, see: [docs/SECURE_KEYS_SETUP.md](./docs/SECURE_KEYS_SETUP.md)
 
 ### What Happens During Build
 - ✅ API keys are injected from `app.json` and `eas.json`

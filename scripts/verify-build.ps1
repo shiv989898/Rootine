@@ -45,10 +45,20 @@ Test-BuildFile "src\services\firebase\config.ts" "Firebase config exists"
 Write-Host ""
 
 Write-Host "Checking Configuration..." -ForegroundColor White
-Test-BuildString "app.json" "geminiApiKey" "Gemini API key in app.json"
-Test-BuildString "eas.json" "EXPO_PUBLIC_GEMINI_API_KEY" "Gemini API key in eas.json"
+Test-BuildString "eas.json" "EXPO_PUBLIC_GEMINI_API_KEY" "Gemini API key configured in eas.json"
 Test-BuildString "src\services\api\geminiService.ts" "Constants.expoConfig" "Constants config check"
 Test-BuildString "src\services\api\geminiService.ts" "buildFallbackPlan" "Fallback plan exists"
+
+# Check for hardcoded keys (security check)
+$appJson = Get-Content "app.json" -Raw
+$easJson = Get-Content "eas.json" -Raw
+if ($appJson -match "AIza[A-Za-z0-9_-]{35}" -or $easJson -match "AIza[A-Za-z0-9_-]{35}") {
+    Write-Host "[FAIL] Found hardcoded API key in config files!" -ForegroundColor Red
+    Write-Host "       API keys should only be in .env or EAS secrets" -ForegroundColor Red
+    $Errors++
+} else {
+    Write-Host "[OK] No hardcoded API keys in config files" -ForegroundColor Green
+}
 Write-Host ""
 
 Write-Host "Checking Dependencies..." -ForegroundColor White
@@ -76,8 +86,34 @@ if (Test-Path ".env") {
         Write-Host "[WARN] .env should be in .gitignore" -ForegroundColor Yellow
         $Warnings++
     }
+    
+    # Check if .env has API key
+    $envContent = Get-Content ".env" -Raw
+    if ($envContent -match "EXPO_PUBLIC_GEMINI_API_KEY") {
+        Write-Host "[OK] EXPO_PUBLIC_GEMINI_API_KEY found in .env" -ForegroundColor Green
+    } else {
+        Write-Host "[WARN] EXPO_PUBLIC_GEMINI_API_KEY not found in .env" -ForegroundColor Yellow
+        Write-Host "       Add it to .env or use EAS secrets for builds" -ForegroundColor Yellow
+        $Warnings++
+    }
 } else {
-    Write-Host "[WARN] .env file not found (optional for production)" -ForegroundColor Yellow
+    Write-Host "[WARN] .env file not found" -ForegroundColor Yellow
+    Write-Host "       Copy .env.example to .env and add your API keys" -ForegroundColor Yellow
+    Write-Host "       Or use EAS secrets for production builds" -ForegroundColor Yellow
+    $Warnings++
+}
+
+# Check for example files
+if (Test-Path ".env.example") {
+    Write-Host "[OK] .env.example exists (template file)" -ForegroundColor Green
+} else {
+    Write-Host "[WARN] .env.example missing - should provide template" -ForegroundColor Yellow
+}
+
+if (Test-Path "eas.json.example") {
+    Write-Host "[OK] eas.json.example exists (template file)" -ForegroundColor Green
+} else {
+    Write-Host "[INFO] eas.json.example not found (optional)" -ForegroundColor Gray
 }
 Write-Host ""
 
