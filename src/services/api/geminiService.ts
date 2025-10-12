@@ -330,3 +330,10 @@ Provide only the meal names as a comma-separated list.
     }
   },
 };
+
+/**
+ * Generic AI content generation (exported for other services)
+ */
+export const generateAIContent = async (prompt: string): Promise<string> => {
+  return callGemini(prompt);
+};
