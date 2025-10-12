@@ -200,8 +200,6 @@ const HomeScreen = () => {
           </Text>
           <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
         </View>
-          <Text style={styles.quoteAuthor}>- Mark Twain</Text>
-        </View>
 
         {/* Quick Actions */}
         <View style={styles.actionsContainer}>
@@ -419,7 +417,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'right',
   },
-});
   statItem: {
     alignItems: 'center',
   },
@@ -453,24 +450,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-  },
-  quoteCard: {
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-  },
-  quoteText: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '600',
-    color: COLORS.text,
-    textAlign: 'center',
-    marginVertical: SPACING.md,
-  },
-  quoteAuthor: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
-    textAlign: 'right',
-    fontStyle: 'italic',
   },
   actionsContainer: {
     flexDirection: 'row',
