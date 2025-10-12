@@ -192,12 +192,64 @@ service cloud.firestore {
 ---
 
 ## 📦 Build an APK
-1. Log in to Expo (once per machine):
+
+### Prerequisites
+1. **Install EAS CLI globally**:
+   ```powershell
+   npm install -g eas-cli
+   ```
+
+2. **Login to Expo** (once per machine):
    ```powershell
    eas login
    ```
-2. Trigger a preview APK build:
+
+3. **Verify build configuration**:
    ```powershell
+   npm run verify-build
+   ```
+   This checks that all required files and API keys are properly configured.
+
+### Build Commands
+
+#### Production APK (Recommended)
+```powershell
+npm run build:android
+# or
+eas build --platform android --profile production
+```
+
+#### Preview APK (Testing)
+```powershell
+npm run build:preview
+# or
+eas build --platform android --profile preview
+```
+
+### What Happens During Build
+- ✅ API keys are injected from `app.json` and `eas.json`
+- ✅ Gemini AI configured for production use
+- ✅ Firebase connectivity verified
+- ✅ All features bundled (offline-capable)
+- ✅ APK signed and ready for distribution
+
+### Download & Install
+1. Build completes in ~10-15 minutes (cloud build)
+2. Download APK from EAS dashboard: https://expo.dev/accounts/[your-account]/projects/rootine/builds
+3. Transfer to Android device
+4. Enable "Install from unknown sources" in Android settings
+5. Install the APK
+
+### Verify AI Works in APK
+After installing, test these features:
+- 🤖 Generate diet plan (Settings → Diet Planner)
+- 📊 View analytics and insights
+- 🏆 Complete challenges
+- 💬 Check daily motivational quotes
+
+**Note**: If Gemini API fails, the app automatically uses fallback diet plans to ensure a smooth experience.
+
+For detailed build instructions and troubleshooting, see: [docs/APK_BUILD_GUIDE.md](./docs/APK_BUILD_GUIDE.md)
    npx eas build --profile preview-apk --platform android --non-interactive
    ```
 3. Monitor build progress on the Expo dashboard; expect a download URL in 10–30 minutes.
