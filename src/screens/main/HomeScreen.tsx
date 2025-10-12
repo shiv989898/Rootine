@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -13,13 +14,89 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
 import { getGreeting, formatDate } from '@/utils/helpers';
-import { RootStackParamList } from '@/types';
+import { RootStackParamList, UserChallenge } from '@/types';
+import { getUserDailyChallenges, getUserWeeklyChallenge } from '@/services/firebase/challengeService';
+import { getDailyQuote } from '@/services/api/motivationalQuotes';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
+  const [challenge, setChallenge] = useState<UserChallenge | null>(null);
+  const [challengeLoading, setChallengeLoading] = useState(true);
+
+  const dailyQuote = useMemo(() => getDailyQuote(), []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const hydrateChallenges = async () => {
+      if (!user) {
+        if (isMounted) {
+          setChallenge(null);
+          setChallengeLoading(false);
+        }
+        return;
+      }
+
+      try {
+        setChallengeLoading(true);
+        const [daily, weekly] = await Promise.all([
+          getUserDailyChallenges().catch(() => []),
+          getUserWeeklyChallenge().catch(() => null),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        const activeDaily = daily.filter((entry) => !entry.isClaimed);
+        const readyToClaim = activeDaily.find((entry) => entry.isCompleted);
+        const highestProgressDaily = activeDaily
+          .slice()
+          .sort((a, b) => b.progress - a.progress)[0];
+
+        const spotlight =
+          readyToClaim ||
+          highestProgressDaily ||
+          (weekly && !weekly.isClaimed ? weekly : null);
+
+        setChallenge(spotlight);
+      } finally {
+        if (isMounted) {
+          setChallengeLoading(false);
+        }
+      }
+    };
+
+    hydrateChallenges();
+
+    const intervalId = setInterval(hydrateChallenges, 1000 * 60 * 5);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [user]);
+
+  const challengeProgress = useMemo(() => {
+    if (!challenge) return 0;
+    return Math.min(100, Math.max(0, Math.round(challenge.progress)));
+  }, [challenge]);
+
+  const challengeStatus = useMemo(() => {
+    if (!challenge) return 'No active challenges yet.';
+    if (challenge.isClaimed) return 'Reward collected!';
+    if (challenge.isCompleted) return 'Ready to claim rewards – tap to celebrate!';
+
+    const goal = challenge.challenge.goal;
+    if (typeof goal.current === 'number') {
+      return `${goal.current}/${goal.target} complete`;
+    }
+
+    return `${challengeProgress}% complete`;
+  }, [challenge, challengeProgress]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -49,6 +126,59 @@ const HomeScreen = () => {
           </View>
         </View>
 
+        {/* Challenge Spotlight */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={[styles.card, styles.challengeCard]}
+          onPress={() => navigation.navigate('Challenges')}
+        >
+          <View style={styles.challengeHeader}>
+            <View style={styles.challengeBadge}>
+              <Icon name="fire" size={20} color="#fff" />
+            </View>
+            <Text style={styles.challengeTitle}>Challenge Spotlight</Text>
+          </View>
+
+          {challengeLoading ? (
+            <View style={styles.challengeLoading}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={styles.challengeLoadingText}>Fetching your next win...</Text>
+            </View>
+          ) : challenge ? (
+            <>
+              <Text style={styles.challengeName}>{challenge.challenge.title}</Text>
+              <Text style={styles.challengeDescription}>{challenge.challenge.description}</Text>
+              <View style={styles.challengeMetaRow}>
+                <View style={styles.challengeRewardChip}>
+                  <Icon
+                    name="star-circle"
+                    size={18}
+                    color="#FFD54F"
+                    style={styles.challengeRewardChipIcon}
+                  />
+                  <Text style={styles.challengeRewardText}>
+                    {challenge.challenge.reward.points} pts
+                  </Text>
+                </View>
+                <Text style={styles.challengeStatus}>{challengeStatus}</Text>
+              </View>
+              <View style={styles.challengeProgressBar}>
+                <View
+                  style={[styles.challengeProgressFill, { width: `${challengeProgress}%` }]}
+                />
+              </View>
+              <Text style={styles.challengeProgressLabel}>{challengeProgress}% complete</Text>
+            </>
+          ) : (
+            <View>
+              <Text style={styles.challengeEmptyTitle}>No active challenges yet</Text>
+              <Text style={styles.challengeDescription}>
+                Come back tomorrow for a fresh quest and bonus points.
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
         {/* Today's Habits */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -64,10 +194,12 @@ const HomeScreen = () => {
 
         {/* Motivational Quote */}
         <View style={[styles.card, styles.quoteCard]}>
-          <Icon name="arm-flex" size={40} color={COLORS.primary} />
+          <Icon name="format-quote-open" size={32} color={COLORS.primary} style={{ opacity: 0.3, marginBottom: SPACING.sm }} />
           <Text style={styles.quoteText}>
-            "The secret of getting ahead is getting started."
+            "{dailyQuote.text}"
           </Text>
+          <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
+        </View>
           <Text style={styles.quoteAuthor}>- Mark Twain</Text>
         </View>
 
@@ -167,6 +299,127 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginTop: SPACING.md,
   },
+  challengeCard: {
+    marginBottom: SPACING.md,
+    overflow: 'hidden',
+    backgroundColor: '#F2FDF6',
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.15)',
+  },
+  challengeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  challengeBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  challengeTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginLeft: SPACING.sm,
+  },
+  challengeLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+  },
+  challengeLoadingText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    marginLeft: SPACING.sm,
+  },
+  challengeName: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+  },
+  challengeDescription: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+    lineHeight: 20,
+  },
+  challengeMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+  },
+  challengeRewardChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+  },
+  challengeRewardChipIcon: {
+    marginRight: SPACING.xs,
+  },
+  challengeRewardText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: '#F57C00',
+  },
+  challengeStatus: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  challengeProgressBar: {
+    height: 10,
+    borderRadius: 20,
+    backgroundColor: '#E0F2F1',
+    overflow: 'hidden',
+  },
+  challengeProgressFill: {
+    height: '100%',
+    borderRadius: 20,
+    backgroundColor: COLORS.primary,
+  },
+  challengeProgressLabel: {
+    marginTop: SPACING.xs,
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  challengeEmptyTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+  },
+  quoteCard: {
+    backgroundColor: '#F0F4FF',
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  quoteIcon: {
+    marginBottom: SPACING.sm,
+    opacity: 0.3,
+  },
+  quoteText: {
+    fontSize: FONT_SIZES.md,
+    fontStyle: 'italic',
+    color: COLORS.text,
+    lineHeight: 22,
+    marginBottom: SPACING.sm,
+  },
+  quoteAuthor: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+});
   statItem: {
     alignItems: 'center',
   },
@@ -215,6 +468,8 @@ const styles = StyleSheet.create({
   quoteAuthor: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
+    fontWeight: '600',
+    textAlign: 'right',
     fontStyle: 'italic',
   },
   actionsContainer: {
