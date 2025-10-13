@@ -4,10 +4,8 @@
     "slug": "rootine",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#4CAF50"
     },
@@ -22,9 +20,7 @@
     "android": {
       "package": "com.rootine.app",
       "versionCode": 1,
-      "icon": "./assets/icon.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4CAF50"
       },
       "permissions": [
@@ -38,16 +34,13 @@
         "android.permission.VIBRATE"
       ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "web": {},
     "plugins": [
       "expo-image-picker",
       "expo-font",
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
           "color": "#4CAF50",
           "sounds": []
         }
