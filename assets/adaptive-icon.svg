@@ -1,0 +1,28 @@
+
+<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#4CAF50" rx="225.28"/>
+  
+  <!-- Letter R -->
+  <text 
+    x="50%" 
+    y="50%" 
+    dominant-baseline="middle" 
+    text-anchor="middle" 
+    font-family="Arial, sans-serif" 
+    font-weight="bold" 
+    font-size="512" 
+    fill="white">
+    R
+  </text>
+  
+  <!-- Checkmark accent -->
+  <path 
+    d="M 716.8 256 L 819.2 358.4 L 665.6 512" 
+    stroke="white" 
+    stroke-width="51.2" 
+    fill="none" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+    opacity="0.6"/>
+</svg>

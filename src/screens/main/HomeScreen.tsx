@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, BounceIn } from 'react-native-reanimated';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -102,36 +103,37 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getGreeting()},</Text>
             <Text style={styles.userName}>{user?.displayName || 'Friend'}!</Text>
           </View>
-          <View style={styles.statsContainer}>
+          <Animated.View entering={BounceIn.delay(300)} style={styles.statsContainer}>
             <View style={styles.statBadge}>
               <Icon name="fire" size={20} color="#FF5722" />
               <Text style={styles.statValue}>{user?.profile.streakDays || 0}</Text>
               <Text style={styles.statLabel}>Streak</Text>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
 
         {/* Quick Stats */}
-        <View style={styles.card}>
+        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.card}>
           <Text style={styles.cardTitle}>Your Progress</Text>
           <View style={styles.statsRow}>
             <StatItem label="Level" value={user?.profile.level.toString() || '1'} iconName="star" />
             <StatItem label="Points" value={user?.profile.points.toString() || '0'} iconName="target" />
             <StatItem label="Badges" value={user?.profile.badges.length.toString() || '0'} iconName="trophy" />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Challenge Spotlight */}
-        <TouchableOpacity
-          activeOpacity={0.9}
-          style={[styles.card, styles.challengeCard]}
-          onPress={() => navigation.navigate('Challenges')}
-        >
+        <Animated.View entering={FadeInUp.delay(300).springify()}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={[styles.card, styles.challengeCard]}
+            onPress={() => navigation.navigate('Challenges')}
+          >
           <View style={styles.challengeHeader}>
             <View style={styles.challengeBadge}>
               <Icon name="fire" size={20} color="#fff" />
@@ -178,35 +180,40 @@ const HomeScreen = () => {
             </View>
           )}
         </TouchableOpacity>
+        </Animated.View>
 
         {/* Today's Habits */}
-        <View style={styles.card}>
+        <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Today's Habits</Text>
             <Text style={styles.dateText}>{formatDate(new Date(), 'MMM dd')}</Text>
           </View>
           <Text style={styles.emptyText}>Start tracking your habits!</Text>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.navigate('Habits')}
+            activeOpacity={0.8}
+          >
             <Icon name="plus" size={20} color="#FFFFFF" />
             <Text style={styles.addButtonText}>Add Habit</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* Motivational Quote */}
-        <View style={[styles.card, styles.quoteCard]}>
+        <Animated.View entering={FadeInUp.delay(500).springify()} style={[styles.card, styles.quoteCard]}>
           <Icon name="format-quote-open" size={32} color={COLORS.primary} style={{ opacity: 0.3, marginBottom: SPACING.sm }} />
           <Text style={styles.quoteText}>
             "{dailyQuote.text}"
           </Text>
           <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
-        </View>
+        </Animated.View>
 
         {/* Quick Actions */}
-        <View style={styles.actionsContainer}>
+        <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.actionsContainer}>
           <QuickActionButton iconName="podium-gold" label="Leaderboard" onPress={() => navigation.navigate('Leaderboard')} />
           <QuickActionButton iconName="trophy" label="Challenges" onPress={() => navigation.navigate('Challenges')} />
           <QuickActionButton iconName="account-group" label="Add Friends" onPress={() => navigation.navigate('SearchUsers')} />
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -10,6 +10,7 @@ interface HabitCardProps {
   isCompleted: boolean;
   onToggle: () => void;
   onPress: () => void;
+  onReminderPress?: () => void;
 }
 
 export const HabitCard = React.memo<HabitCardProps>(({
@@ -17,6 +18,7 @@ export const HabitCard = React.memo<HabitCardProps>(({
   isCompleted,
   onToggle,
   onPress,
+  onReminderPress,
 }) => {
   const scaleValue = React.useRef(new Animated.Value(1)).current;
   const [showPoints, setShowPoints] = useState(false);
@@ -58,9 +60,22 @@ export const HabitCard = React.memo<HabitCardProps>(({
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={1}>
-            {habit.title}
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={1}>
+              {habit.title}
+            </Text>
+            {onReminderPress && (
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onReminderPress();
+                }}
+                style={styles.reminderButton}
+              >
+                <Icon name="bell-outline" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
           {habit.description && (
             <Text style={styles.description} numberOfLines={1}>
               {habit.description}
@@ -135,11 +150,21 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
+    flex: 1,
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
     color: COLORS.dark,
     marginBottom: SPACING.xs,
+  },
+  reminderButton: {
+    padding: SPACING.xs,
+    marginLeft: SPACING.sm,
   },
   description: {
     fontSize: FONT_SIZES.sm,

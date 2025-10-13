@@ -1,0 +1,27 @@
+<svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+  <!-- Transparent background for notification -->
+  <rect width="96" height="96" fill="transparent"/>
+  
+  <!-- Simple R letter for notification -->
+  <text 
+    x="48" 
+    y="48" 
+    dominant-baseline="middle" 
+    text-anchor="middle" 
+    font-family="Arial, sans-serif" 
+    font-weight="bold" 
+    font-size="52" 
+    fill="white">
+    R
+  </text>
+  
+  <!-- Small checkmark accent -->
+  <path 
+    d="M 68 28 L 76 36 L 62 50" 
+    stroke="white" 
+    stroke-width="5" 
+    fill="none" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+    opacity="0.8"/>
+</svg>

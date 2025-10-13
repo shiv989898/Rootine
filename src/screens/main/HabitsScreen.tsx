@@ -20,6 +20,8 @@ import {
 } from '@/services/firebase/habitService';
 import { HabitCard } from '@/components/habits/HabitCard';
 import { CreateEditHabitModal } from '@/components/habits/CreateEditHabitModal';
+import { ReminderSettingsModal } from '@/components/habits/ReminderSettingsModal';
+import { initializeNotifications } from '@/services/notifications/notificationService';
 
 const HabitsScreen = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -27,12 +29,19 @@ const HabitsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [completedToday, setCompletedToday] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [stats, setStats] = useState({
     totalHabits: 0,
     completedToday: 0,
     totalCompletions: 0,
     bestStreak: 0,
   });
+
+  // Initialize notifications on mount
+  useEffect(() => {
+    initializeNotifications();
+  }, []);
 
   // Load habits on mount
   useEffect(() => {
@@ -116,6 +125,16 @@ const HabitsScreen = () => {
     console.log('Habit pressed:', habit.title);
   };
 
+  const handleReminderPress = (habit: Habit) => {
+    setSelectedHabit(habit);
+    setReminderModalVisible(true);
+  };
+
+  const handleReminderSave = (reminderSettings: any) => {
+    console.log('Reminder settings saved:', reminderSettings);
+    // TODO: Save to Firebase if needed
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       {/* Stats Cards */}
@@ -168,6 +187,7 @@ const HabitsScreen = () => {
       isCompleted={completedToday.includes(item.id)}
       onToggle={() => handleToggleHabit(item.id)}
       onPress={() => handleHabitPress(item)}
+      onReminderPress={() => handleReminderPress(item)}
     />
   );
 
@@ -206,6 +226,19 @@ const HabitsScreen = () => {
         onClose={() => setModalVisible(false)}
         onSuccess={handleModalSuccess}
       />
+
+      {selectedHabit && (
+        <ReminderSettingsModal
+          visible={reminderModalVisible}
+          habitId={selectedHabit.id}
+          habitTitle={selectedHabit.title}
+          onClose={() => {
+            setReminderModalVisible(false);
+            setSelectedHabit(null);
+          }}
+          onSave={handleReminderSave}
+        />
+      )}
     </SafeAreaView>
   );
 };

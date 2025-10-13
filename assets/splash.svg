@@ -1,0 +1,44 @@
+<svg width="1284" height="2778" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1284" height="2778" fill="#4CAF50"/>
+  
+  <!-- App Icon in center -->
+  <rect x="442" y="1189" width="400" height="400" fill="white" rx="88"/>
+  
+  <!-- Letter R -->
+  <text 
+    x="642" 
+    y="1420" 
+    dominant-baseline="middle" 
+    text-anchor="middle" 
+    font-family="Arial, sans-serif" 
+    font-weight="bold" 
+    font-size="200" 
+    fill="#4CAF50">
+    R
+  </text>
+  
+  <!-- App Name -->
+  <text 
+    x="642" 
+    y="1650" 
+    text-anchor="middle" 
+    font-family="Arial, sans-serif" 
+    font-weight="bold" 
+    font-size="60" 
+    fill="white">
+    Rootine
+  </text>
+  
+  <!-- Tagline -->
+  <text 
+    x="642" 
+    y="1720" 
+    text-anchor="middle" 
+    font-family="Arial, sans-serif" 
+    font-size="28" 
+    fill="white" 
+    opacity="0.8">
+    Build Better Habits
+  </text>
+</svg>
