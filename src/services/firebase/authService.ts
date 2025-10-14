@@ -5,11 +5,15 @@ import {
   updateProfile,
   User as FirebaseUser,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithCredential,
+  onAuthStateChanged,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 import { User, UserProfile } from '@/types';
 import { generateInviteCode } from '@/utils/helpers';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const authService = {
   // Sign up with email and password
@@ -151,10 +155,75 @@ export const authService = {
     };
   },
 
+  // Sign in with Google
+  signInWithGoogle: async (idToken: string): Promise<User> => {
+    try {
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      const firebaseUser = userCredential.user;
+
+      // Check if user exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      
+      if (userDoc.exists()) {
+        // Existing user - return their data
+        const userData = userDoc.data();
+        return {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          displayName: firebaseUser.displayName || userData.displayName,
+          ...(firebaseUser.photoURL || userData.photoURL ? { photoURL: firebaseUser.photoURL || userData.photoURL } : {}),
+          isGuest: false,
+          profile: userData.profile,
+          createdAt: userData.createdAt?.toDate() || new Date(),
+          updatedAt: userData.updatedAt?.toDate() || new Date(),
+        };
+      } else {
+        // New user - create profile
+        const userProfile: UserProfile = {
+          activityLevel: 'sedentary',
+          dietaryPreference: 'vegetarian',
+          allergies: [],
+          goals: [],
+          points: 0,
+          level: 1,
+          badges: [],
+          streakDays: 0,
+          longestStreak: 0,
+          isPremium: false,
+          inviteCode: generateInviteCode(),
+          friends: [],
+        };
+
+        const user: Omit<User, 'createdAt' | 'updatedAt'> = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          displayName: firebaseUser.displayName || 'User',
+          ...(firebaseUser.photoURL && { photoURL: firebaseUser.photoURL }),
+          isGuest: false,
+          profile: userProfile,
+        };
+
+        await setDoc(doc(db, 'users', firebaseUser.uid), {
+          ...user,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        return { ...user, createdAt: new Date(), updatedAt: new Date() };
+      }
+    } catch (error: any) {
+      console.error('Google Sign In error:', error);
+      throw new Error(error.message || 'Failed to sign in with Google');
+    }
+  },
+
   // Sign out
   signOut: async (): Promise<void> => {
     try {
       await firebaseSignOut(auth);
+      // Clear any stored auth tokens
+      await AsyncStorage.removeItem('userToken');
     } catch (error: any) {
       console.error('Sign out error:', error);
       throw new Error(error.message || 'Failed to sign out');
@@ -209,8 +278,7 @@ export const authService = {
       console.error('Reset password error:', error);
       throw new Error(error.message || 'Failed to send password reset email');
     }
-  },
 };
 
 // Export named functions for easier importing
-export const { signUp, signIn, signInAsGuest, signOut, updateUserProfile, getCurrentUser, resetPassword } = authService;
+export const { signUp, signIn, signInAsGuest, signInWithGoogle, signOut, updateUserProfile, getCurrentUser, resetPassword } = authService;

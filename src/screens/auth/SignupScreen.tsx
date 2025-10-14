@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { RootStackParamList } from '@/types';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
 import { isValidEmail } from '@/utils/helpers';
+import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
 
 type SignupScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Signup'>;
 
@@ -18,6 +19,7 @@ const SignupScreen = () => {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigation = useNavigation<SignupScreenNavigationProp>();
+  const googleSignIn = useGoogleSignIn();
 
   const handleSignup = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -43,6 +45,14 @@ const SignupScreen = () => {
       Alert.alert('Signup Failed', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await googleSignIn.signIn();
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Failed', error.message || 'Failed to sign in with Google. Please try again.');
     }
   };
 
@@ -81,6 +91,24 @@ const SignupScreen = () => {
             <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSignup} disabled={loading}>
               <Text style={styles.buttonText}>{loading ? 'Creating Account...' : 'Sign Up'}</Text>
             </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.googleButton, (googleSignIn.loading || googleSignIn.disabled) && styles.buttonDisabled]} 
+              onPress={handleGoogleSignIn}
+              disabled={googleSignIn.loading || googleSignIn.disabled}
+            >
+              <Icon name="google" size={24} color="#DB4437" />
+              <Text style={styles.googleButtonText}>
+                {googleSignIn.loading ? 'Signing in with Google...' : 'Continue with Google'}
+              </Text>
+            </TouchableOpacity>
+
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -108,6 +136,21 @@ const styles = StyleSheet.create({
   button: { backgroundColor: COLORS.primary, padding: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', marginTop: SPACING.md },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#FFFFFF', fontSize: FONT_SIZES.lg, fontWeight: '600' },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.xl },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border || '#E0E0E0' },
+  dividerText: { paddingHorizontal: SPACING.md, color: COLORS.textSecondary, fontSize: FONT_SIZES.sm },
+  googleButton: { 
+    backgroundColor: '#FFFFFF', 
+    padding: SPACING.md, 
+    borderRadius: RADIUS.md, 
+    alignItems: 'center', 
+    flexDirection: 'row', 
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    gap: SPACING.sm,
+  },
+  googleButtonText: { color: '#333333', fontSize: FONT_SIZES.lg, fontWeight: '600' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl },
   footerText: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary },
   footerLink: { fontSize: FONT_SIZES.md, color: COLORS.primary, fontWeight: '600' },

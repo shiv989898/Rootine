@@ -9,6 +9,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  signInWithGoogle: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User['profile']>) => Promise<void>;
 }
@@ -64,6 +65,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userData = await authService.signIn(email, password);
       setUser(userData);
       await AsyncStorage.removeItem('guestUser');
+      // Store auth token for persistence
+      await AsyncStorage.setItem('userToken', userData.id);
     } catch (error) {
       throw error;
     }
@@ -74,6 +77,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userData = await authService.signUp(email, password, displayName);
       setUser(userData);
       await AsyncStorage.removeItem('guestUser');
+      // Store auth token for persistence
+      await AsyncStorage.setItem('userToken', userData.id);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const signInWithGoogle = async (idToken: string) => {
+    try {
+      const userData = await authService.signInWithGoogle(idToken);
+      setUser(userData);
+      await AsyncStorage.removeItem('guestUser');
+      // Store auth token for persistence
+      await AsyncStorage.setItem('userToken', userData.id);
     } catch (error) {
       throw error;
     }
@@ -95,6 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await AsyncStorage.removeItem('guestUser');
       } else {
         await authService.signOut();
+        await AsyncStorage.removeItem('userToken');
       }
       setUser(null);
     } catch (error) {
@@ -136,6 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         signIn,
         signUp,
         signInAsGuest,
+        signInWithGoogle,
         signOut,
         updateProfile,
       }}

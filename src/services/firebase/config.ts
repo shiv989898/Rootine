@@ -2,7 +2,8 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
   getAuth, 
   initializeAuth, 
-  Auth
+  Auth,
+  getReactNativePersistence
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -22,11 +23,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firebase Auth
-// Note: AsyncStorage persistence is automatically used in React Native
+// Initialize Firebase Auth with AsyncStorage persistence
+// This ensures users stay logged in even after closing the app
 let auth: Auth;
 try {
-  auth = initializeAuth(app);
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage)
+  });
 } catch (error) {
   // If initializeAuth fails (e.g., already initialized), get existing auth
   auth = getAuth(app);
