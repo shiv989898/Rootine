@@ -33,32 +33,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user session
-    checkUserSession();
+    let isMounted = true;
+    let unsubscribe: (() => void) | undefined;
+
+    const initializeAuth = async () => {
+      try {
+        const guestData = await AsyncStorage.getItem('guestUser');
+        if (guestData && isMounted) {
+          const guestUser = JSON.parse(guestData);
+          setUser(guestUser);
+          setLoading(false);
+        }
+
+        unsubscribe = authService.subscribeToAuthChanges(async (currentUser) => {
+          if (!isMounted) {
+            return;
+          }
+
+          if (currentUser) {
+            setUser(currentUser);
+            await AsyncStorage.removeItem('guestUser');
+          } else {
+            const storedGuest = await AsyncStorage.getItem('guestUser');
+            if (storedGuest) {
+              setUser(JSON.parse(storedGuest));
+            } else {
+              setUser(null);
+            }
+          }
+
+          setLoading(false);
+        });
+      } catch (error) {
+        console.error('Initialize auth error:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
-
-  const checkUserSession = async () => {
-    try {
-      // Check for guest user
-      const guestData = await AsyncStorage.getItem('guestUser');
-      if (guestData) {
-        const guestUser = JSON.parse(guestData);
-        setUser(guestUser);
-        setLoading(false);
-        return;
-      }
-
-      // Check for authenticated user
-      const currentUser = await authService.getCurrentUser();
-      if (currentUser) {
-        setUser(currentUser);
-      }
-    } catch (error) {
-      console.error('Check user session error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     try {

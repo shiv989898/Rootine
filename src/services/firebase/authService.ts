@@ -279,7 +279,43 @@ export const authService = {
       throw new Error(error.message || 'Failed to send password reset email');
     }
   },
+
+  // Subscribe to auth state changes
+  subscribeToAuthChanges: (callback: (user: User | null) => void): (() => void) => {
+    return onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) {
+        callback(null);
+        return;
+      }
+
+      getDoc(doc(db, 'users', firebaseUser.uid))
+        .then((userDoc) => {
+          if (!userDoc.exists()) {
+            callback(null);
+            return;
+          }
+
+          const userData = userDoc.data();
+          callback({
+            id: firebaseUser.uid,
+            email: firebaseUser.email!,
+            displayName: firebaseUser.displayName || userData.displayName,
+            ...(firebaseUser.photoURL || userData.photoURL
+              ? { photoURL: firebaseUser.photoURL || userData.photoURL }
+              : {}),
+            isGuest: false,
+            profile: userData.profile,
+            createdAt: userData.createdAt?.toDate() || new Date(),
+            updatedAt: userData.updatedAt?.toDate() || new Date(),
+          });
+        })
+        .catch((error) => {
+          console.error('Auth state change error:', error);
+          callback(null);
+        });
+    });
+  },
 };
 
 // Export named functions for easier importing
-export const { signUp, signIn, signInAsGuest, signInWithGoogle, signOut, updateUserProfile, getCurrentUser, resetPassword } = authService;
+export const { signUp, signIn, signInAsGuest, signInWithGoogle, signOut, updateUserProfile, getCurrentUser, resetPassword, subscribeToAuthChanges } = authService;
