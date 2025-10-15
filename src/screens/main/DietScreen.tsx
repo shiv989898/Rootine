@@ -203,7 +203,7 @@ const DietScreen = () => {
 
   if (loading && !dietPlan) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Generating your personalized diet plan...</Text>
@@ -214,7 +214,7 @@ const DietScreen = () => {
 
   if (!dietPlan) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView
           contentContainerStyle={styles.emptyContainer}
           refreshControl={
@@ -241,7 +241,7 @@ const DietScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
         refreshControl={

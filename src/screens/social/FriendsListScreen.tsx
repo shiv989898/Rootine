@@ -153,7 +153,7 @@ export default function FriendsListScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+  <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4CAF50" />
           <Text style={styles.loadingText}>Loading friends...</Text>
@@ -163,7 +163,7 @@ export default function FriendsListScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+  <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>

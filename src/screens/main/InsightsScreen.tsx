@@ -56,7 +56,7 @@ const InsightsScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Analyzing your habits...</Text>
@@ -67,7 +67,7 @@ const InsightsScreen = () => {
 
   if (!stats || !weeklyData || !monthlyData) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.emptyContainer}>
           <Icon name="chart-box-outline" size={64} color={COLORS.textSecondary} />
           <Text style={styles.emptyText}>No data yet</Text>
@@ -78,7 +78,7 @@ const InsightsScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>

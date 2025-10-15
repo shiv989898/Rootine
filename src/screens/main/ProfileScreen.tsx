@@ -93,7 +93,7 @@ const ProfileScreen = () => {
     .slice(0, 3);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile Header */}
         <View style={styles.header}>

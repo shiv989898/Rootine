@@ -10,7 +10,7 @@ type Props = StackScreenProps<RootStackParamList, 'Onboarding'>;
 
 const OnboardingScreen = ({ navigation }: Props) => {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Icon name="leaf" size={80} color={COLORS.primary} />

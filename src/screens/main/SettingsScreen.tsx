@@ -112,7 +112,7 @@ const SettingsScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView}>
         {/* Profile Section */}
         <View style={styles.profileCard}>
