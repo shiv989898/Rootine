@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -279,7 +280,7 @@ export default function SearchUsersScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -316,7 +317,7 @@ export default function SearchUsersScreen() {
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={renderEmptyState}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

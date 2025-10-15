@@ -126,68 +126,76 @@ export const getUserDailyChallenges = async (): Promise<UserChallenge[]> => {
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('Not authenticated');
 
-  const today = new Date().toISOString().split('T')[0];
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  // Check if user has challenges for today
-  const userChallengesQuery = query(
-    collection(db, 'userChallenges'),
-    where('userId', '==', currentUser.uid),
-    where('challengeId', '>=', `daily_${today}`),
-    where('challengeId', '<', `daily_${today}~`)
-  );
+    // Check if user has challenges for today
+    const userChallengesQuery = query(
+      collection(db, 'userChallenges'),
+      where('userId', '==', currentUser.uid)
+    );
 
-  const snapshot = await getDocs(userChallengesQuery);
+    const snapshot = await getDocs(userChallengesQuery);
+    
+    // Filter for today's challenges
+    const todaysChallenges = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          userId: data.userId,
+          challengeId: data.challengeId,
+          challenge: {
+            ...data.challenge,
+            startDate: data.challenge.startDate?.toDate() || new Date(),
+            endDate: data.challenge.endDate?.toDate() || new Date(),
+          },
+          progress: data.progress,
+          isCompleted: data.isCompleted,
+          isClaimed: data.isClaimed,
+          completedAt: data.completedAt?.toDate(),
+          claimedAt: data.claimedAt?.toDate(),
+        } as UserChallenge;
+      })
+      .filter((uc) => uc.challengeId.startsWith(`daily_${today}`));
 
-  // If no challenges exist, generate new ones
-  if (snapshot.empty) {
-    const newChallenges = await generateDailyChallenges();
-    const userChallenges: UserChallenge[] = [];
+    // If no challenges exist for today, generate new ones
+    if (todaysChallenges.length === 0) {
+      const newChallenges = await generateDailyChallenges();
+      const userChallenges: UserChallenge[] = [];
 
-    for (const challenge of newChallenges) {
-      const userChallengeData: UserChallenge = {
-        id: `${currentUser.uid}_${challenge.id}`,
-        userId: currentUser.uid,
-        challengeId: challenge.id,
-        challenge,
-        progress: 0,
-        isCompleted: false,
-        isClaimed: false,
-      };
+      for (const challenge of newChallenges) {
+        const userChallengeData: UserChallenge = {
+          id: `${currentUser.uid}_${challenge.id}`,
+          userId: currentUser.uid,
+          challengeId: challenge.id,
+          challenge,
+          progress: 0,
+          isCompleted: false,
+          isClaimed: false,
+        };
 
-      await setDoc(doc(db, 'userChallenges', userChallengeData.id), {
-        ...userChallengeData,
-        challenge: {
-          ...challenge,
-          startDate: Timestamp.fromDate(challenge.startDate),
-          endDate: Timestamp.fromDate(challenge.endDate),
-        },
-      });
+        await setDoc(doc(db, 'userChallenges', userChallengeData.id), {
+          ...userChallengeData,
+          challenge: {
+            ...challenge,
+            startDate: Timestamp.fromDate(challenge.startDate),
+            endDate: Timestamp.fromDate(challenge.endDate),
+          },
+        });
 
-      userChallenges.push(userChallengeData);
+        userChallenges.push(userChallengeData);
+      }
+
+      return userChallenges;
     }
 
-    return userChallenges;
+    // Return existing challenges for today
+    return todaysChallenges;
+  } catch (error: any) {
+    console.error('Error getting daily challenges:', error);
+    throw new Error(`Failed to load challenges: ${error.message}`);
   }
-
-  // Return existing challenges
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      userId: data.userId,
-      challengeId: data.challengeId,
-      challenge: {
-        ...data.challenge,
-        startDate: data.challenge.startDate?.toDate() || new Date(),
-        endDate: data.challenge.endDate?.toDate() || new Date(),
-      },
-      progress: data.progress,
-      isCompleted: data.isCompleted,
-      isClaimed: data.isClaimed,
-      completedAt: data.completedAt?.toDate(),
-      claimedAt: data.claimedAt?.toDate(),
-    } as UserChallenge;
-  });
 };
 
 /**
