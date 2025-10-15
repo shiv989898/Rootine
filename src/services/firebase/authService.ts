@@ -278,6 +278,7 @@ export const authService = {
       console.error('Reset password error:', error);
       throw new Error(error.message || 'Failed to send password reset email');
     }
+  },
 };
 
 // Export named functions for easier importing
