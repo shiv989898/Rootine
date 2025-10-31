@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { UserProfile, DietPlan, Meal, Recipe, Macros } from '@/types';
+import { UserProfile, DietPlan, Meal, Recipe } from '@/types';
 
 const GEMINI_MODEL = 'gemini-2.0-flash-exp';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;

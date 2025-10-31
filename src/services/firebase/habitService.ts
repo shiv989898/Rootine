@@ -18,10 +18,11 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { Habit, HabitCompletion } from '@/types';
+import { ALL_REMINDER_DAYS, DEFAULT_REMINDER_LEAD_MINUTES } from '@/constants/reminders';
 import { getCurrentUser } from './authService';
 import { calculateStreak, getStartOfDay } from '@/utils/helpers';
 import { checkAndUpdateChallenges } from './challengeService';
-import { awardPoints, updateUserLevel } from './userService';
+import { awardPoints } from './userService';
 
 /**
  * Create a new habit for the current user
@@ -38,6 +39,12 @@ export const createHabit = async (habitData: Omit<Habit, 'id' | 'userId' | 'crea
     currentStreak: 0,
     longestStreak: 0,
     completedDates: [],
+    reminderTime: habitData.reminderEnabled ? habitData.reminderTime ?? '09:00' : null,
+    reminderDays: habitData.reminderDays ?? (habitData.reminderEnabled ? ALL_REMINDER_DAYS : []),
+    reminderLeadMinutes: habitData.reminderEnabled
+      ? habitData.reminderLeadMinutes ?? DEFAULT_REMINDER_LEAD_MINUTES
+      : null,
+    reminderNotificationIds: habitData.reminderNotificationIds ?? [],
   };
 
   const docRef = await addDoc(collection(db, 'habits'), habit);
@@ -64,6 +71,10 @@ export const getUserHabits = async (): Promise<Habit[]> => {
     return {
       id: docSnapshot.id,
       ...data,
+      reminderTime: data.reminderTime ?? null,
+      reminderDays: data.reminderDays ?? [],
+      reminderLeadMinutes: data.reminderLeadMinutes ?? null,
+      reminderNotificationIds: data.reminderNotificationIds ?? [],
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
       updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
     } as Habit;
@@ -83,6 +94,10 @@ export const getHabitById = async (habitId: string): Promise<Habit | null> => {
   return {
     id: docSnapshot.id,
     ...data,
+    reminderTime: data.reminderTime ?? null,
+    reminderDays: data.reminderDays ?? [],
+    reminderLeadMinutes: data.reminderLeadMinutes ?? null,
+    reminderNotificationIds: data.reminderNotificationIds ?? [],
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
   } as Habit;
@@ -93,8 +108,18 @@ export const getHabitById = async (habitId: string): Promise<Habit | null> => {
  */
 export const updateHabit = async (habitId: string, updates: Partial<Habit>): Promise<void> => {
   const docRef = doc(db, 'habits', habitId);
+  const sanitizedUpdates = Object.entries(updates).reduce<Record<string, any>>(
+    (acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    {}
+  );
+
   await updateDoc(docRef, {
-    ...updates,
+    ...sanitizedUpdates,
     updatedAt: new Date(),
   });
 };
@@ -321,6 +346,9 @@ export const subscribeToHabits = (
           return {
             id: docSnapshot.id,
             ...data,
+            reminderDays: data.reminderDays ?? [],
+            reminderLeadMinutes: data.reminderLeadMinutes ?? null,
+            reminderNotificationIds: data.reminderNotificationIds ?? [],
             createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
           } as Habit;

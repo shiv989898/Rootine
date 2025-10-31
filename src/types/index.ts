@@ -7,6 +7,7 @@ export interface User {
   isGuest?: boolean;
   profile: UserProfile;
   friends?: string[]; // user IDs for social features
+  teams?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,12 +28,16 @@ export interface UserProfile {
   monthlyPoints?: number; // Points earned this month
   level: number;
   badges: Badge[];
-  streakDays: number;
+  streakDays?: number;
   currentStreak?: number; // Current habit streak
   longestStreak: number;
   isPremium: boolean;
   inviteCode: string;
-  friends: string[]; // user IDs
+  friends?: string[]; // user IDs
+  teams?: string[];
+  activePowerUps?: PowerUp[];
+  storedPowerUps?: PowerUp[];
+  quests?: QuestProgress[];
 }
 
 // Habit Types
@@ -43,8 +48,11 @@ export interface Habit {
   description: string;
   category: HabitCategory;
   recurrence: Recurrence;
-  reminderTime?: string; // HH:mm format
+  reminderTime?: string | null; // HH:mm format
   reminderEnabled: boolean;
+  reminderDays?: number[];
+  reminderLeadMinutes?: number | null;
+  reminderNotificationIds?: string[];
   color: string;
   icon: string;
   currentStreak: number;
@@ -102,6 +110,44 @@ export interface ChallengeProgress {
   isCompleted: boolean;
 }
 
+export interface TeamChallengeMember {
+  userId: string;
+  displayName: string;
+  photoURL?: string;
+  contribution: number;
+  joinedAt: Date;
+  lastActivityAt?: Date;
+}
+
+export interface TeamChallengeGoal {
+  type: 'collective_completions' | 'collective_points';
+  target: number;
+  category?: HabitCategory;
+}
+
+export interface TeamChallenge {
+  id: string;
+  title: string;
+  description: string;
+  goal: TeamChallengeGoal;
+  habitIds?: string[];
+  teamSizeLimit: number;
+  createdBy: string;
+  reward: Reward;
+  startDate: Date;
+  endDate: Date;
+  members: TeamChallengeMember[];
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TeamChallengeProgress {
+  challengeId: string;
+  totalContribution: number;
+  rank: number;
+}
+
 export interface Reward {
   points: number;
   badge?: Badge;
@@ -114,6 +160,53 @@ export interface Badge {
   icon: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   unlockedAt?: Date;
+}
+
+export type PowerUpType = 'streak_freeze' | 'double_points' | 'reminder_boost';
+
+export interface PowerUp {
+  id: string;
+  name: string;
+  description: string;
+  type: PowerUpType;
+  icon: string;
+  durationHours?: number;
+  usesRemaining: number;
+  activatedAt?: Date;
+  expiresAt?: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export type QuestRequirementType =
+  | 'complete_habits'
+  | 'complete_category'
+  | 'maintain_streak'
+  | 'earn_points'
+  | 'social_interaction';
+
+export interface QuestRequirement {
+  type: QuestRequirementType;
+  target: number;
+  category?: HabitCategory;
+  current?: number;
+}
+
+export interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  type: 'daily' | 'weekly';
+  requirement: QuestRequirement;
+  reward: Reward;
+  expiresAt: Date;
+}
+
+export interface QuestProgress {
+  quest: Quest;
+  progress: number;
+  isCompleted: boolean;
+  isClaimed: boolean;
+  updatedAt: Date;
 }
 
 // Daily Challenge Types
@@ -212,6 +305,51 @@ export interface LeaderboardEntry {
   rank: number;
 }
 
+// Analytics Types
+export interface HabitHeatmapDay {
+  date: string; // ISO date string
+  count: number;
+}
+
+export interface SuccessTrendPoint {
+  label: string; // e.g., 'Week 42'
+  successRate: number; // percentage
+  completionRate?: number; // optional alt metric
+}
+
+export interface BestTimeInsight {
+  habitId?: string;
+  habitName?: string;
+  suggestedSlot: string; // e.g., '07:00 AM'
+  confidence: number; // 0-1 scale
+  rationale: string;
+}
+
+export interface HabitCorrelationInsight {
+  habitAId: string;
+  habitAName: string;
+  habitBId: string;
+  habitBName: string;
+  correlation: number; // -1 to 1 simplified metric
+  lift?: number;
+  support?: number;
+}
+
+export interface WeeklyRecapHighlight {
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export interface WeeklyRecapStory {
+  weekStart: string;
+  weekEnd: string;
+  stats: Array<{ label: string; value: string; icon: string }>;
+  highlights: WeeklyRecapHighlight[];
+  achievements: Badge[];
+  completionSparkline: number[];
+}
+
 // Diet & Nutrition Types
 export interface DietPlan {
   id: string;
@@ -296,7 +434,7 @@ export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   ProfileSetup: undefined;
-  MainTabs: undefined;
+  MainTabs: { screen?: keyof TabParamList } | undefined;
   HabitDetail: { habitId: string };
   CreateHabit: undefined;
   EditHabit: { habitId: string };
@@ -305,6 +443,7 @@ export type RootStackParamList = {
   Challenges: undefined;
   Leaderboard: undefined;
   BadgeShowcase: undefined;
+  WeeklyRecap: { recap: WeeklyRecapStory };
   UserProfile: { userId: string };
   FriendsList: undefined;
   SearchUsers: undefined;

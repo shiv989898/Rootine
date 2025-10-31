@@ -60,6 +60,17 @@ const ProfileScreen = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingStateContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingStateText}>Loading your profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -215,6 +226,12 @@ const ProfileScreen = () => {
             value={`${user?.profile.currentStreak || 0}d`} 
             icon="fire" 
             color="#FF5722"
+          />
+          <StatCard
+            label="Friends"
+            value={friendsCount.toString()}
+            icon="account-group"
+            color="#4CAF50"
           />
         </View>
 
@@ -497,6 +514,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: SPACING.xl,
     flexWrap: 'wrap',
+  },
+  loadingStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  loadingStateText: {
+    marginTop: SPACING.md,
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZES.md,
   },
   statCard: {
     flex: 1,

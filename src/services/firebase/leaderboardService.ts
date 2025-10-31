@@ -180,6 +180,117 @@ export const getFriendsLeaderboard = async (): Promise<LeaderboardEntry[]> => {
 };
 
 /**
+ * Get leaderboard focused on longest active streaks
+ * @param scope - Whether to fetch global streaks or limit to friends
+ * @param limitCount - Max number of entries to return
+ */
+export const getStreakLeaderboard = async (
+  scope: 'global' | 'friends' = 'global',
+  limitCount: number = 20
+): Promise<LeaderboardEntry[]> => {
+  try {
+    if (scope === 'global') {
+      const usersRef = collection(db, 'users');
+      const streakQuery = query(
+        usersRef,
+        orderBy('profile.currentStreak', 'desc'),
+        orderBy('profile.points', 'desc'),
+        limit(limitCount)
+      );
+
+      const snapshot = await getDocs(streakQuery);
+
+      return snapshot.docs.map((docSnap, index) => {
+        const userData = docSnap.data() as User;
+
+        return {
+          userId: docSnap.id,
+          userName: userData.profile.displayName || 'Anonymous',
+          userAvatar: userData.profile.photoURL || undefined,
+          rank: index + 1,
+          points: userData.profile.points || 0,
+          streak: userData.profile.currentStreak || 0,
+          level: Math.floor((userData.profile.points || 0) / 100),
+          weeklyPoints: userData.profile.weeklyPoints || 0,
+          monthlyPoints: userData.profile.monthlyPoints || 0,
+        };
+      });
+    }
+
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (!userDoc.exists()) {
+      throw new Error('User not found');
+    }
+
+    const userData = userDoc.data() as User;
+    const friendIds = userData.friends || [];
+
+    const entries: LeaderboardEntry[] = [];
+
+    if (friendIds.length > 0) {
+      const chunks = chunkArray(friendIds, 10);
+
+      for (const chunk of chunks) {
+        const friendsQuery = query(
+          collection(db, 'users'),
+          where('__name__', 'in', chunk)
+        );
+
+        const snapshot = await getDocs(friendsQuery);
+        snapshot.forEach((docSnap) => {
+          const friend = docSnap.data() as User;
+          entries.push({
+            userId: docSnap.id,
+            userName: friend.profile.displayName || 'Anonymous',
+            userAvatar: friend.profile.photoURL || undefined,
+            rank: 0,
+            points: friend.profile.points || 0,
+            streak: friend.profile.currentStreak || 0,
+            level: Math.floor((friend.profile.points || 0) / 100),
+            weeklyPoints: friend.profile.weeklyPoints || 0,
+            monthlyPoints: friend.profile.monthlyPoints || 0,
+          });
+        });
+      }
+    }
+
+    // Always include current user in friends leaderboard
+    entries.push({
+      userId,
+      userName: userData.profile.displayName || 'You',
+      userAvatar: userData.profile.photoURL || undefined,
+      rank: 0,
+      points: userData.profile.points || 0,
+      streak: userData.profile.currentStreak || 0,
+      level: Math.floor((userData.profile.points || 0) / 100),
+      weeklyPoints: userData.profile.weeklyPoints || 0,
+      monthlyPoints: userData.profile.monthlyPoints || 0,
+    });
+
+    entries.sort((a, b) => {
+      if (b.streak !== a.streak) {
+        return b.streak - a.streak;
+      }
+      return b.points - a.points;
+    });
+
+    entries.forEach((entry, index) => {
+      entry.rank = index + 1;
+    });
+
+    return entries.slice(0, limitCount);
+  } catch (error) {
+    console.error('Error fetching streak leaderboard:', error);
+    throw error;
+  }
+};
+
+/**
  * Get current user's rank in global leaderboard
  * @param period - Time period for ranking
  * @returns User's current rank (1-indexed)

@@ -59,10 +59,9 @@ export const FriendCard: React.FC<FriendCardProps> = ({
   };
 
   const getStreakDisplay = () => {
-    if (friend.profile.streakDays > 0) {
-      return `${friend.profile.streakDays}`;
-    }
-    return '0';
+    const streakValue =
+      friend.profile?.streakDays ?? friend.profile?.currentStreak ?? 0;
+    return `${streakValue}`;
   };
 
   return (
@@ -99,12 +98,12 @@ export const FriendCard: React.FC<FriendCardProps> = ({
             <Text style={styles.statText}>{friend.profile.points || 0}</Text>
           </View>
           
-          {friend.profile.friends && (
+          {friend.profile?.friends?.length ? (
             <View style={styles.stat}>
               <MaterialCommunityIcons name="account-group" size={14} color="#4CAF50" />
-              <Text style={styles.statText}>{friend.profile.friends.length}</Text>
+              <Text style={styles.statText}>{friend.profile?.friends?.length ?? 0}</Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         {status === 'pending' && (

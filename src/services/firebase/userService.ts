@@ -24,26 +24,76 @@ export const awardPoints = async (
     
     const userData = userDoc.data() as User;
     const currentPoints = userData.profile.points || 0;
+    const activePowerUpsRaw: any[] = userData.profile.activePowerUps || [];
+    const now = Date.now();
+
+    let activePowerUps = activePowerUpsRaw
+      .map((item) => {
+        const activatedAt = item.activatedAt?.toDate?.() ?? (item.activatedAt ? new Date(item.activatedAt) : undefined);
+        const expiresAt = item.expiresAt?.toDate?.() ?? (item.expiresAt ? new Date(item.expiresAt) : undefined);
+        return {
+          ...item,
+          activatedAt,
+          expiresAt,
+        };
+      })
+      .filter((item) => !item.expiresAt || item.expiresAt.getTime() > now);
+
+    const expiredCount = activePowerUpsRaw.length - activePowerUps.length;
+    let powerUpStateChanged = expiredCount > 0;
+
+    let adjustedPoints = points;
+
+    const doublePointsPowerUp = activePowerUps.find(
+      (item) => item.type === 'double_points' && (item.usesRemaining ?? 0) > 0
+    );
+
+    if (adjustedPoints > 0 && doublePointsPowerUp) {
+      adjustedPoints *= 2;
+      const remaining = (doublePointsPowerUp.usesRemaining ?? 1) - 1;
+      if (remaining <= 0) {
+        activePowerUps = activePowerUps.filter((item) => item.id !== doublePointsPowerUp.id);
+      } else {
+        doublePointsPowerUp.usesRemaining = remaining;
+      }
+      powerUpStateChanged = true;
+    }
     
-    // Prevent points from going below 0
-    const finalPoints = Math.max(0, points);
-    if (points < 0 && currentPoints + points < 0) {
+    if (adjustedPoints < 0 && currentPoints + adjustedPoints < 0) {
       // If deducting would make it negative, just set to 0
       await updateDoc(userRef, {
         'profile.points': 0,
-        'profile.weeklyPoints': Math.max(0, (userData.profile.weeklyPoints || 0) + points),
-        'profile.monthlyPoints': Math.max(0, (userData.profile.monthlyPoints || 0) + points),
+        'profile.weeklyPoints': Math.max(0, (userData.profile.weeklyPoints || 0) + adjustedPoints),
+        'profile.monthlyPoints': Math.max(0, (userData.profile.monthlyPoints || 0) + adjustedPoints),
         'profile.updatedAt': Timestamp.now(),
+        ...(powerUpStateChanged
+          ? {
+              'profile.activePowerUps': activePowerUps.map((item) => ({
+                ...item,
+                activatedAt: item.activatedAt ? Timestamp.fromDate(item.activatedAt) : null,
+                expiresAt: item.expiresAt ? Timestamp.fromDate(item.expiresAt) : null,
+              })),
+            }
+          : {}),
       });
       return 0;
     }
     
     // Update all point fields atomically
     await updateDoc(userRef, {
-      'profile.points': increment(points),
-      'profile.weeklyPoints': increment(points),
-      'profile.monthlyPoints': increment(points),
+      'profile.points': increment(adjustedPoints),
+      'profile.weeklyPoints': increment(adjustedPoints),
+      'profile.monthlyPoints': increment(adjustedPoints),
       'profile.updatedAt': Timestamp.now(),
+      ...(expiredCount > 0
+        ? {
+            'profile.activePowerUps': activePowerUps.map((item) => ({
+              ...item,
+              activatedAt: item.activatedAt ? Timestamp.fromDate(item.activatedAt) : null,
+              expiresAt: item.expiresAt ? Timestamp.fromDate(item.expiresAt) : null,
+            })),
+          }
+        : {}),
     });
 
     // Get updated total
@@ -77,14 +127,66 @@ export const updateUserStreak = async (
     if (!userId) throw new Error('User not authenticated');
 
     const userRef = doc(db, 'users', userId);
-    const updates: any = {
-      'profile.currentStreak': currentStreak,
-      'profile.streakDays': currentStreak,
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) throw new Error('User not found');
+
+    const userData = userDoc.data() as User;
+    const existingStreak = userData.profile.currentStreak || 0;
+    const existingLongest = userData.profile.longestStreak || 0;
+
+    const activePowerUpsRaw: any[] = userData.profile.activePowerUps || [];
+    const now = Date.now();
+
+    let activePowerUps = activePowerUpsRaw
+      .map((item) => {
+        const activatedAt = item.activatedAt?.toDate?.() ?? (item.activatedAt ? new Date(item.activatedAt) : undefined);
+        const expiresAt = item.expiresAt?.toDate?.() ?? (item.expiresAt ? new Date(item.expiresAt) : undefined);
+        return { ...item, activatedAt, expiresAt };
+      })
+      .filter((item) => !item.expiresAt || item.expiresAt.getTime() > now);
+
+    const expiredCount = activePowerUpsRaw.length - activePowerUps.length;
+    let powerUpStateChanged = expiredCount > 0;
+
+    let streakToSave = currentStreak;
+
+    const freezePowerUp = activePowerUps.find(
+      (item) => item.type === 'streak_freeze' && (item.usesRemaining ?? 0) > 0
+    );
+
+    if (streakToSave < existingStreak && freezePowerUp) {
+      streakToSave = existingStreak;
+      const remaining = (freezePowerUp.usesRemaining ?? 1) - 1;
+      if (remaining <= 0) {
+        activePowerUps = activePowerUps.filter((item) => item.id !== freezePowerUp.id);
+      } else {
+        freezePowerUp.usesRemaining = remaining;
+      }
+      powerUpStateChanged = true;
+    }
+
+    const longestToSave = Math.max(
+      longestStreak !== undefined ? longestStreak : 0,
+      existingLongest,
+      streakToSave
+    );
+
+    const updates: Record<string, unknown> = {
+      'profile.currentStreak': streakToSave,
+      'profile.streakDays': streakToSave,
       'profile.updatedAt': Timestamp.now(),
     };
 
-    if (longestStreak !== undefined) {
-      updates['profile.longestStreak'] = longestStreak;
+    if (longestToSave > existingLongest) {
+      updates['profile.longestStreak'] = longestToSave;
+    }
+
+    if (powerUpStateChanged) {
+      updates['profile.activePowerUps'] = activePowerUps.map((item) => ({
+        ...item,
+        activatedAt: item.activatedAt ? Timestamp.fromDate(item.activatedAt) : null,
+        expiresAt: item.expiresAt ? Timestamp.fromDate(item.expiresAt) : null,
+      }));
     }
 
     await updateDoc(userRef, updates);

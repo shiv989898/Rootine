@@ -9,7 +9,16 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db, auth } from './config';
-import { Habit, HabitCompletion, HabitCategory } from '@/types';
+import {
+  Habit,
+  HabitCompletion,
+  HabitCategory,
+  HabitHeatmapDay,
+  SuccessTrendPoint,
+  BestTimeInsight,
+  HabitCorrelationInsight,
+  WeeklyRecapStory,
+} from '@/types';
 
 export interface HabitStats {
   totalCompletions: number;
@@ -348,4 +357,353 @@ export const getHabitRecommendations = async (): Promise<string[]> => {
   }
 
   return recommendations;
+};
+
+/**
+ * Build heatmap data for the last N days
+ */
+export const getHabitHeatmap = async (days: number = 180): Promise<HabitHeatmapDay[]> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('Not authenticated');
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - (days - 1));
+
+  const completionsQueryRef = query(
+    collection(db, 'habitCompletions'),
+    where('userId', '==', currentUser.uid),
+    where('date', '>=', startDate.toISOString().split('T')[0]),
+    where('date', '<=', endDate.toISOString().split('T')[0])
+  );
+
+  const snapshot = await getDocs(completionsQueryRef);
+  const countsByDate: Record<string, number> = {};
+
+  snapshot.forEach((doc) => {
+    const data = doc.data() as HabitCompletion;
+    countsByDate[data.date] = (countsByDate[data.date] || 0) + 1;
+  });
+
+  const result: HabitHeatmapDay[] = [];
+  const cursor = new Date(startDate);
+
+  while (cursor <= endDate) {
+    const iso = cursor.toISOString().split('T')[0];
+    result.push({
+      date: iso,
+      count: countsByDate[iso] || 0,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return result;
+};
+
+/**
+ * Success rate trend across weeks or months
+ */
+export const getSuccessRateTrends = async (
+  period: 'weekly' | 'monthly' = 'weekly',
+  sampleSize: number = 6
+): Promise<SuccessTrendPoint[]> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('Not authenticated');
+
+  const habitsQueryRef = query(
+    collection(db, 'habits'),
+    where('userId', '==', currentUser.uid)
+  );
+  const habitsSnapshot = await getDocs(habitsQueryRef);
+  const habitCount = habitsSnapshot.size;
+
+  if (habitCount === 0) {
+    return [];
+  }
+
+  const endDate = new Date();
+  const trend: SuccessTrendPoint[] = [];
+
+  for (let i = sampleSize - 1; i >= 0; i--) {
+    const periodEnd = new Date(endDate);
+    const periodStart = new Date(endDate);
+
+    if (period === 'weekly') {
+      periodStart.setDate(periodEnd.getDate() - i * 7 - 6);
+      periodEnd.setDate(periodEnd.getDate() - i * 7);
+    } else {
+      periodStart.setMonth(periodEnd.getMonth() - i, 1);
+      periodEnd.setMonth(periodStart.getMonth(), 1);
+      periodEnd.setMonth(periodEnd.getMonth() + 1, 0);
+    }
+
+    periodStart.setHours(0, 0, 0, 0);
+    periodEnd.setHours(23, 59, 59, 999);
+
+    const completionsQueryRef = query(
+      collection(db, 'habitCompletions'),
+      where('userId', '==', currentUser.uid),
+      where('date', '>=', periodStart.toISOString().split('T')[0]),
+      where('date', '<=', periodEnd.toISOString().split('T')[0])
+    );
+    const completionSnapshot = await getDocs(completionsQueryRef);
+    const completionsCount = completionSnapshot.size;
+
+    const expected =
+      period === 'weekly'
+        ? habitCount * 7
+        : habitCount * new Date(periodEnd.getFullYear(), periodEnd.getMonth() + 1, 0).getDate();
+
+    const successRate = expected > 0 ? Math.round((completionsCount / expected) * 100) : 0;
+
+    const label =
+      period === 'weekly'
+        ? `Wk ${getWeekNumber(periodEnd)}`
+        : `${periodEnd.toLocaleString('default', { month: 'short' })}`;
+
+    trend.push({
+      label,
+      successRate,
+      completionRate: successRate,
+    });
+  }
+
+  return trend;
+};
+
+const getWeekNumber = (date: Date): number => {
+  const firstDay = new Date(date.getFullYear(), 0, 1);
+  const pastDays = Math.floor((date.getTime() - firstDay.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.ceil((pastDays + firstDay.getDay() + 1) / 7);
+};
+
+/**
+ * Determine best time insights per habit based on completion timestamps
+ */
+export const getBestTimeInsights = async (): Promise<BestTimeInsight[]> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('Not authenticated');
+
+  const habitsQueryRef = query(
+    collection(db, 'habits'),
+    where('userId', '==', currentUser.uid)
+  );
+  const habitsSnapshot = await getDocs(habitsQueryRef);
+  const habits = habitsSnapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Habit));
+
+  if (habits.length === 0) {
+    return [];
+  }
+
+  const completionsQueryRef = query(
+    collection(db, 'habitCompletions'),
+    where('userId', '==', currentUser.uid)
+  );
+  const completionsSnapshot = await getDocs(completionsQueryRef);
+
+  const completionsByHabit: Record<string, HabitCompletion[]> = {};
+  completionsSnapshot.docs.forEach((docSnap) => {
+    const completion = docSnap.data() as HabitCompletion;
+    completionsByHabit[completion.habitId] = completionsByHabit[completion.habitId] || [];
+    completionsByHabit[completion.habitId].push(completion);
+  });
+
+  const insights: BestTimeInsight[] = [];
+
+  habits.forEach((habit) => {
+    const completions = completionsByHabit[habit.id] || [];
+    if (completions.length === 0) {
+      return;
+    }
+
+    const counts: Record<number, number> = {};
+    completions.forEach((completion) => {
+      const date = completion.completedAt instanceof Timestamp
+        ? completion.completedAt.toDate()
+        : new Date(completion.completedAt);
+      const hour = date.getHours();
+      counts[hour] = (counts[hour] || 0) + 1;
+    });
+
+    const topHour = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (!topHour) {
+      return;
+    }
+
+    const hourInt = Number(topHour[0]);
+    const confidence = Math.min(1, topHour[1] / completions.length);
+
+    const suggestedSlot = new Date();
+    suggestedSlot.setHours(hourInt, 0, 0, 0);
+
+    insights.push({
+      habitId: habit.id,
+      habitName: habit.title,
+      suggestedSlot: suggestedSlot.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      confidence,
+      rationale: `You complete this habit most often around ${hourInt}:00 with ${(confidence * 100).toFixed(0)}% consistency.`,
+    });
+  });
+
+  return insights
+    .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+    .slice(0, 3);
+};
+
+/**
+ * Determine habitual correlations between habit pairs
+ */
+export const getHabitCorrelations = async (): Promise<HabitCorrelationInsight[]> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('Not authenticated');
+
+  const habitsSnapshot = await getDocs(
+    query(collection(db, 'habits'), where('userId', '==', currentUser.uid))
+  );
+  const habits = habitsSnapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Habit));
+
+  const completionsSnapshot = await getDocs(
+    query(collection(db, 'habitCompletions'), where('userId', '==', currentUser.uid))
+  );
+
+  const byDate: Record<string, string[]> = {};
+  completionsSnapshot.docs.forEach((docSnap) => {
+    const completion = docSnap.data() as HabitCompletion;
+    byDate[completion.date] = byDate[completion.date] || [];
+    if (!byDate[completion.date].includes(completion.habitId)) {
+      byDate[completion.date].push(completion.habitId);
+    }
+  });
+
+  const pairCounts: Record<string, number> = {};
+  const habitCounts: Record<string, number> = {};
+
+  Object.values(byDate).forEach((habitIds) => {
+    habitIds.forEach((habitId) => {
+      habitCounts[habitId] = (habitCounts[habitId] || 0) + 1;
+    });
+
+    for (let i = 0; i < habitIds.length; i++) {
+      for (let j = i + 1; j < habitIds.length; j++) {
+        const key = [habitIds[i], habitIds[j]].sort().join('::');
+        pairCounts[key] = (pairCounts[key] || 0) + 1;
+      }
+    }
+  });
+
+  const totalDays = Object.keys(byDate).length || 1;
+
+  const correlations: HabitCorrelationInsight[] = Object.entries(pairCounts)
+    .map(([key, count]) => {
+      const [habitAId, habitBId] = key.split('::');
+      const habitA = habits.find((h) => h.id === habitAId);
+      const habitB = habits.find((h) => h.id === habitBId);
+      const support = count / totalDays;
+      const confidence = count / (habitCounts[habitAId] || 1);
+      const baseRate = (habitCounts[habitBId] || 1) / totalDays;
+      const lift = confidence / baseRate;
+
+      return {
+        habitAId,
+        habitAName: habitA?.title || 'Habit A',
+        habitBId,
+        habitBName: habitB?.title || 'Habit B',
+        correlation: Number((lift - 1).toFixed(2)),
+        lift: Number(lift.toFixed(2)),
+        support: Number(support.toFixed(2)),
+      };
+    })
+    .sort((a, b) => (b.lift || 0) - (a.lift || 0))
+    .slice(0, 3);
+
+  return correlations;
+};
+
+export const getWeeklyRecapStory = async (): Promise<WeeklyRecapStory | null> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('Not authenticated');
+
+  const now = new Date();
+  const day = now.getDay() || 7; // treat Sunday as 7
+  const endOfWeek = new Date(now);
+  endOfWeek.setDate(endOfWeek.getDate() - day + 7);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const startOfWeek = new Date(endOfWeek);
+  startOfWeek.setDate(startOfWeek.getDate() - 6);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const completionsSnapshot = await getDocs(
+    query(
+      collection(db, 'habitCompletions'),
+      where('userId', '==', currentUser.uid),
+      where('date', '>=', startOfWeek.toISOString().split('T')[0]),
+      where('date', '<=', endOfWeek.toISOString().split('T')[0])
+    )
+  );
+
+  if (completionsSnapshot.empty) {
+    return null;
+  }
+
+  const completions = completionsSnapshot.docs.map((docSnap) => docSnap.data() as HabitCompletion);
+  const totalCompletions = completions.length;
+  const uniqueDays = new Set(completions.map((item) => item.date)).size;
+
+  const categoryCounts: Record<string, number> = {};
+  const habitsSnapshot = await getDocs(
+    query(collection(db, 'habits'), where('userId', '==', currentUser.uid))
+  );
+  const habits = habitsSnapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Habit));
+
+  completions.forEach((completion) => {
+    const habit = habits.find((h) => h.id === completion.habitId);
+    if (!habit) return;
+    categoryCounts[habit.category] = (categoryCounts[habit.category] || 0) + 1;
+  });
+
+  const topCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0];
+
+  const sparkline: number[] = [];
+  const cursor = new Date(startOfWeek);
+  const completionsGrouped: Record<string, number> = {};
+  completions.forEach((completion) => {
+    completionsGrouped[completion.date] = (completionsGrouped[completion.date] || 0) + 1;
+  });
+
+  while (cursor <= endOfWeek) {
+    const iso = cursor.toISOString().split('T')[0];
+    sparkline.push(completionsGrouped[iso] || 0);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return {
+    weekStart: startOfWeek.toISOString(),
+    weekEnd: endOfWeek.toISOString(),
+    stats: [
+      { label: 'Habits Completed', value: totalCompletions.toString(), icon: 'check-circle' },
+      { label: 'Active Days', value: `${uniqueDays}/7`, icon: 'calendar-check' },
+      {
+        label: 'Top Category',
+        value: topCategory ? `${topCategory[0]} (${topCategory[1]})` : 'Balanced',
+        icon: 'star-outline',
+      },
+    ],
+    highlights: [
+      {
+        title: 'Consistency',
+        description: `You showed up ${uniqueDays} days this week!`,
+        icon: 'fire',
+      },
+      {
+        title: 'Momentum',
+        description: `Best day was ${sparkline.indexOf(Math.max(...sparkline)) + 1} with ${Math.max(
+          ...sparkline
+        )} completions.`,
+        icon: 'chart-line',
+      },
+    ],
+    achievements: [],
+    completionSparkline: sparkline,
+  };
 };

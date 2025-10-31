@@ -10,16 +10,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
+import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
 import { Post } from '@/types';
 import { subscribeToFeedPosts } from '@/services/firebase/socialService';
 import { PostCard } from '@/components/social/PostCard';
 import { CreatePostModal } from '@/components/social/CreatePostModal';
 import { CommentsModal } from '@/components/social/CommentsModal';
-import { useNavigation } from '@react-navigation/native';
 
 const FeedScreen = () => {
-  const navigation = useNavigation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

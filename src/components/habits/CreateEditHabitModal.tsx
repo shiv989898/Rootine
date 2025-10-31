@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,26 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
 import { Habit, HabitCategory, Recurrence } from '@/types';
 import { createHabit, updateHabit } from '@/services/firebase/habitService';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Haptics from 'expo-haptics';
+import {
+  ALL_REMINDER_DAYS,
+  DAYS_OF_WEEK,
+  DEFAULT_REMINDER_LEAD_MINUTES,
+  LEAD_TIME_OPTIONS,
+  getLeadTimeLabel,
+} from '@/constants/reminders';
+import {
+  computeNextReminderDateFromConfig,
+  formatReminderDateTime,
+  formatReminderRelativeTime,
+} from '@/utils/reminders';
 
 interface CreateEditHabitModalProps {
   visible: boolean;
@@ -75,7 +90,105 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
   const [recurrence, setRecurrence] = useState<Recurrence>({ type: 'daily' });
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('09:00');
+  const [reminderLeadMinutes, setReminderLeadMinutes] = useState(DEFAULT_REMINDER_LEAD_MINUTES);
+  const [reminderDays, setReminderDays] = useState<number[]>(ALL_REMINDER_DAYS);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const reminderTimeDate = useMemo(() => {
+    const base = new Date();
+    const [hours, minutes] = reminderTime.split(':').map(Number);
+    base.setHours(Number.isNaN(hours) ? 9 : hours, Number.isNaN(minutes) ? 0 : minutes, 0, 0);
+    return base;
+  }, [reminderTime]);
+
+  const formattedReminderTime = useMemo(
+    () =>
+      reminderTimeDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }),
+    [reminderTimeDate]
+  );
+
+  const selectedDaysLabel = useMemo(() => {
+    if (reminderDays.length === ALL_REMINDER_DAYS.length) {
+      return 'Every day';
+    }
+    if (reminderDays.length === 0) {
+      return 'Select days';
+    }
+    return reminderDays
+      .map((day) => DAYS_OF_WEEK.find((item) => item.id === day)?.short)
+      .filter(Boolean)
+      .join(', ');
+  }, [reminderDays]);
+
+  const nextReminder = useMemo(
+    () =>
+      computeNextReminderDateFromConfig(
+        {
+          reminderEnabled,
+          reminderTime,
+          reminderDays,
+          reminderLeadMinutes,
+        },
+        new Date()
+      ),
+    [reminderDays, reminderEnabled, reminderLeadMinutes, reminderTime]
+  );
+
+  const reminderSummary = useMemo(() => {
+    if (!reminderEnabled) {
+      return 'Reminders are turned off for this habit.';
+    }
+
+    const baseSummary = `${selectedDaysLabel} at ${formattedReminderTime} (${getLeadTimeLabel(
+      reminderLeadMinutes
+    ).toLowerCase()})`;
+
+    if (!nextReminder) {
+      return baseSummary;
+    }
+
+    return `${baseSummary} • ${formatReminderRelativeTime(nextReminder)}`;
+  }, [formattedReminderTime, nextReminder, reminderDays, reminderEnabled, reminderLeadMinutes, selectedDaysLabel]);
+
+  const handleReminderToggle = (value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setReminderEnabled(value);
+    if (!value) {
+      setShowTimePicker(false);
+    }
+  };
+
+  const handleTimeChange = (_event: any, selected?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+
+    if (selected) {
+      const hours = `${selected.getHours()}`.padStart(2, '0');
+      const minutes = `${selected.getMinutes()}`.padStart(2, '0');
+      setReminderTime(`${hours}:${minutes}`);
+    }
+  };
+
+  const toggleReminderDay = (dayId: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setReminderDays((prev) => {
+      if (prev.includes(dayId)) {
+        return prev.filter((day) => day !== dayId);
+      }
+      return [...prev, dayId].sort((a, b) => a - b);
+    });
+  };
+
+  const handleLeadTimeChange = (value: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setReminderLeadMinutes(value);
+  };
 
   // Populate form when editing
   useEffect(() => {
@@ -88,6 +201,10 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
       setRecurrence(habit.recurrence);
       setReminderEnabled(habit.reminderEnabled);
       setReminderTime(habit.reminderTime || '09:00');
+      setReminderLeadMinutes(habit.reminderLeadMinutes ?? DEFAULT_REMINDER_LEAD_MINUTES);
+      setReminderDays(
+        habit.reminderDays?.length ? habit.reminderDays : ALL_REMINDER_DAYS
+      );
     } else {
       // Reset form when creating new habit
       resetForm();
@@ -103,6 +220,9 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
     setRecurrence({ type: 'daily' });
     setReminderEnabled(false);
     setReminderTime('09:00');
+    setReminderLeadMinutes(DEFAULT_REMINDER_LEAD_MINUTES);
+    setReminderDays(ALL_REMINDER_DAYS);
+    setShowTimePicker(false);
   };
 
   const validateForm = (): boolean => {
@@ -131,6 +251,9 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
         recurrence,
         reminderEnabled,
         reminderTime: reminderEnabled ? reminderTime : undefined,
+        reminderDays: reminderEnabled ? reminderDays : [],
+        reminderLeadMinutes: reminderEnabled ? reminderLeadMinutes : null,
+        reminderNotificationIds: habit?.reminderNotificationIds ?? [],
       };
 
       if (isEditing) {
@@ -324,24 +447,108 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
               </View>
               <Switch
                 value={reminderEnabled}
-                onValueChange={setReminderEnabled}
+                onValueChange={handleReminderToggle}
                 trackColor={{ false: COLORS.lightGray, true: COLORS.primary }}
                 thumbColor={COLORS.white}
               />
             </View>
 
             {reminderEnabled && (
-              <View style={styles.timeSelector}>
-                <Icon name="clock-outline" size={20} color={COLORS.textSecondary} />
-                <TextInput
-                  style={styles.timeInput}
-                  value={reminderTime}
-                  onChangeText={setReminderTime}
-                  placeholder="09:00"
-                  keyboardType="numbers-and-punctuation"
-                />
-                <Text style={styles.timeHint}>24-hour format (HH:MM)</Text>
-              </View>
+              <>
+                <TouchableOpacity
+                  style={styles.reminderTimeButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowTimePicker(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Icon name="clock-outline" size={22} color={COLORS.primary} />
+                  <View style={styles.reminderTimeContent}>
+                    <Text style={styles.reminderTimeLabel}>Reminder time</Text>
+                    <Text style={styles.reminderTimeValue}>{formattedReminderTime}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={22} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+
+                {showTimePicker && (
+                  <DateTimePicker
+                    value={reminderTimeDate}
+                    mode="time"
+                    is24Hour={false}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleTimeChange}
+                  />
+                )}
+
+                <Text style={styles.reminderSubheading}>Repeat on</Text>
+                <View style={styles.reminderDaysRow}>
+                  {DAYS_OF_WEEK.map((day) => {
+                    const isSelected = reminderDays.includes(day.id);
+                    return (
+                      <TouchableOpacity
+                        key={day.id}
+                        style={[
+                          styles.reminderDay,
+                          isSelected && styles.reminderDaySelected,
+                        ]}
+                        onPress={() => toggleReminderDay(day.id)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.reminderDayText,
+                            isSelected && styles.reminderDayTextSelected,
+                          ]}
+                        >
+                          {day.short}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={styles.reminderHelperText}>{selectedDaysLabel}</Text>
+
+                <Text style={styles.reminderSubheading}>Remind me</Text>
+                <View style={styles.leadTimeRow}>
+                  {LEAD_TIME_OPTIONS.map((option) => {
+                    const isSelected = option.value === reminderLeadMinutes;
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[
+                          styles.leadOption,
+                          isSelected && styles.leadOptionSelected,
+                        ]}
+                        onPress={() => handleLeadTimeChange(option.value)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.leadOptionText,
+                            isSelected && styles.leadOptionTextSelected,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={styles.reminderSummaryCard}>
+                  <Icon name="bell-ring" size={20} color={COLORS.primary} />
+                  <View style={styles.reminderSummaryContent}>
+                    <Text style={styles.reminderSummaryTitle}>Reminder summary</Text>
+                    <Text style={styles.reminderSummaryText}>{reminderSummary}</Text>
+                    {nextReminder && (
+                      <Text style={styles.reminderSummaryMeta}>
+                        Next notification {formatReminderDateTime(nextReminder)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </>
             )}
           </View>
 
@@ -360,8 +567,8 @@ export const CreateEditHabitModal: React.FC<CreateEditHabitModalProps> = ({
                   {description || 'Your habit description'}
                 </Text>
                 <Text style={styles.previewMeta}>
-                  {category} â€¢ {recurrence.type}
-                  {reminderEnabled && ` â€¢ ${reminderTime}`}
+                  {category} - {recurrence.type}
+                  {reminderEnabled && ` - ${selectedDaysLabel} at ${formattedReminderTime}`}
                 </Text>
               </View>
             </View>
@@ -523,21 +730,125 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  timeSelector: {
+  reminderTimeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginTop: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
   },
-  timeInput: {
+  reminderTimeContent: {
     flex: 1,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-    marginLeft: SPACING.sm,
+    marginLeft: SPACING.md,
   },
-  timeHint: {
+  reminderTimeLabel: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: SPACING.xs / 2,
+  },
+  reminderTimeValue: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  reminderSubheading: {
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  reminderDaysRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  reminderDay: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  reminderDaySelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  reminderDayText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  reminderDayTextSelected: {
+    color: COLORS.white,
+  },
+  reminderHelperText: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+  },
+  leadTimeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  leadOption: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    backgroundColor: COLORS.white,
+  },
+  leadOptionSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  leadOptionText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  leadOptionTextSelected: {
+    color: COLORS.white,
+  },
+  reminderSummaryCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    marginTop: SPACING.lg,
+  },
+  reminderSummaryContent: {
+    flex: 1,
+    marginLeft: SPACING.md,
+  },
+  reminderSummaryTitle: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+  },
+  reminderSummaryText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+    lineHeight: 18,
+  },
+  reminderSummaryMeta: {
     fontSize: FONT_SIZES.xs,
     color: COLORS.textSecondary,
   },

@@ -22,6 +22,7 @@ export const HabitCard = React.memo<HabitCardProps>(({
 }) => {
   const scaleValue = React.useRef(new Animated.Value(1)).current;
   const [showPoints, setShowPoints] = useState(false);
+  const reminderActive = Boolean(habit.reminderEnabled);
 
   // Cleanup animation state on unmount
   useEffect(() => {
@@ -70,9 +71,16 @@ export const HabitCard = React.memo<HabitCardProps>(({
                   e.stopPropagation();
                   onReminderPress();
                 }}
-                style={styles.reminderButton}
+                style={[
+                  styles.reminderButton,
+                  reminderActive && styles.reminderButtonActive,
+                ]}
               >
-                <Icon name="bell-outline" size={20} color={COLORS.primary} />
+                <Icon
+                  name={reminderActive ? 'bell-ring' : 'bell-outline'}
+                  size={20}
+                  color={reminderActive ? COLORS.white : COLORS.primary}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -165,6 +173,10 @@ const styles = StyleSheet.create({
   reminderButton: {
     padding: SPACING.xs,
     marginLeft: SPACING.sm,
+    borderRadius: RADIUS.round,
+  },
+  reminderButtonActive: {
+    backgroundColor: COLORS.primary,
   },
   description: {
     fontSize: FONT_SIZES.sm,

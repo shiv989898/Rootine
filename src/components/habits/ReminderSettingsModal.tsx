@@ -14,6 +14,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
 import {
+  DAYS_OF_WEEK,
+  LEAD_TIME_OPTIONS,
+  DEFAULT_REMINDER_LEAD_MINUTES,
+} from '@/constants/reminders';
+import {
   scheduleHabitReminder,
   cancelHabitReminder,
 } from '@/services/notifications/notificationService';
@@ -27,24 +32,18 @@ interface ReminderSettingsModalProps {
     enabled: boolean;
     time: Date;
     days: number[];
+    leadMinutes: number;
+    notificationIds: string[];
   };
   onClose: () => void;
   onSave: (reminderSettings: {
     enabled: boolean;
     time: Date;
     days: number[];
-  }) => void;
+    leadMinutes: number;
+    notificationIds: string[];
+  }) => Promise<void> | void;
 }
-
-const DAYS_OF_WEEK = [
-  { id: 0, short: 'S', full: 'Sunday' },
-  { id: 1, short: 'M', full: 'Monday' },
-  { id: 2, short: 'T', full: 'Tuesday' },
-  { id: 3, short: 'W', full: 'Wednesday' },
-  { id: 4, short: 'T', full: 'Thursday' },
-  { id: 5, short: 'F', full: 'Friday' },
-  { id: 6, short: 'S', full: 'Saturday' },
-];
 
 export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
   visible,
@@ -61,15 +60,19 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
   const [selectedDays, setSelectedDays] = useState<number[]>(
     existingReminder?.days || [0, 1, 2, 3, 4, 5, 6]
   );
+  const [leadMinutes, setLeadMinutes] = useState<number>(
+    existingReminder?.leadMinutes ?? DEFAULT_REMINDER_LEAD_MINUTES
+  );
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
-    if (existingReminder) {
+    if (visible && existingReminder) {
       setEnabled(existingReminder.enabled);
       setReminderTime(existingReminder.time);
       setSelectedDays(existingReminder.days);
+  setLeadMinutes(existingReminder.leadMinutes ?? DEFAULT_REMINDER_LEAD_MINUTES);
     }
-  }, [existingReminder]);
+  }, [existingReminder, visible]);
 
   const handleToggleDay = (dayId: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -77,7 +80,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
       if (prev.includes(dayId)) {
         return prev.filter((d) => d !== dayId);
       }
-      return [...prev, dayId].sort();
+      return [...prev, dayId].sort((a, b) => a - b);
     });
   };
 
@@ -98,26 +101,34 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+    const sortedDays = [...selectedDays].sort((a, b) => a - b);
     const settings = {
       enabled,
       time: reminderTime,
-      days: selectedDays,
+      days: sortedDays,
+      leadMinutes,
+      notificationIds: existingReminder?.notificationIds ?? [],
     };
 
     // Schedule or cancel notification
     try {
       if (enabled) {
-        await scheduleHabitReminder({
+        const notificationIds = await scheduleHabitReminder({
           habitId,
           habitTitle,
           hour: reminderTime.getHours(),
           minute: reminderTime.getMinutes(),
+          days: sortedDays,
+          leadMinutes,
+          existingNotificationIds: existingReminder?.notificationIds,
         });
+        settings.notificationIds = notificationIds;
       } else {
-        await cancelHabitReminder(habitId);
-      }
-      
-      onSave(settings);
+        await cancelHabitReminder(existingReminder?.notificationIds ?? []);
+        settings.notificationIds = [];
+    }
+
+    await onSave(settings);
       onClose();
     } catch (error) {
       console.error('Error saving reminder:', error);
@@ -243,11 +254,44 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                   </Text>
                 </View>
 
+                {/* Lead Time Selection */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>Remind Me</Text>
+                  <View style={styles.leadContainer}>
+                    {LEAD_TIME_OPTIONS.map((option) => {
+                      const isSelected = leadMinutes === option.value;
+                      return (
+                        <TouchableOpacity
+                          key={option.value}
+                          style={[
+                            styles.leadOption,
+                            isSelected && styles.leadOptionSelected,
+                          ]}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setLeadMinutes(option.value);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.leadOptionText,
+                              isSelected && styles.leadOptionTextSelected,
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
                 {/* Info Card */}
                 <View style={styles.infoCard}>
                   <Icon name="information" size={20} color={COLORS.primary} />
                   <Text style={styles.infoText}>
-                    You'll receive a notification at the selected time on the chosen days
+                    You'll receive a notification before the selected time on the chosen days
                   </Text>
                 </View>
               </>
@@ -280,14 +324,14 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'flex-start',
   },
   container: {
+    flex: 1,
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: RADIUS.xl,
-    borderTopRightRadius: RADIUS.xl,
-    maxHeight: '80%',
+    width: '100%',
+    maxHeight: '100%',
   },
   header: {
     flexDirection: 'row',
@@ -396,6 +440,33 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
     textAlign: 'center',
+  },
+  leadContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -SPACING.xs,
+  },
+  leadOption: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  leadOptionSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  leadOptionText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  leadOptionTextSelected: {
+    color: COLORS.white,
   },
   infoCard: {
     flexDirection: 'row',

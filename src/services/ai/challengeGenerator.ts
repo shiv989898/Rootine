@@ -1,4 +1,4 @@
-import { Habit, DailyChallenge, ChallengeGoal, HabitCategory } from '@/types';
+import { Habit, DailyChallenge } from '@/types';
 import { generateAIContent } from '../api/geminiService';
 
 /**

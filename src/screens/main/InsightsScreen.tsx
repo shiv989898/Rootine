@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
@@ -19,8 +18,6 @@ import {
   WeeklyInsights,
   MonthlyInsights,
 } from '@/services/firebase/analyticsService';
-
-const { width } = Dimensions.get('window');
 
 const InsightsScreen = () => {
   const [loading, setLoading] = useState(true);

@@ -17,7 +17,6 @@ import {
   getHabitById,
   getHabitCompletions,
   deleteHabit,
-  updateHabit,
 } from '@/services/firebase/habitService';
 import { format } from 'date-fns';
 

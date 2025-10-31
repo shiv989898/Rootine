@@ -1,6 +1,5 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { Habit } from '@/types';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -8,6 +7,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -54,59 +55,141 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 };
 
 /**
- * Schedule a notification for a habit reminder
+ * Helper to normalize reminder time with lead offset
  */
-export const scheduleHabitReminder = async (
-  habit: Habit
-): Promise<string | null> => {
-  try {
-    if (!habit.reminder || !habit.reminderTime) {
-      return null;
-    }
-
-    // Cancel existing reminder if any
-    if (habit.reminderId) {
-      await Notifications.cancelScheduledNotificationAsync(habit.reminderId);
-    }
-
-    // Parse reminder time (format: "HH:MM")
-    const [hours, minutes] = habit.reminderTime.split(':').map(Number);
-
-    // Calculate trigger
-    const trigger: Notifications.NotificationTriggerInput = {
-      hour: hours,
-      minute: minutes,
-      repeats: true,
+const calculateReminderTime = (
+  hour: number,
+  minute: number,
+  leadMinutes: number
+) => {
+  const totalMinutes = hour * 60 + minute - leadMinutes;
+  if (totalMinutes >= 0) {
+    return {
+      hour: Math.floor(totalMinutes / 60),
+      minute: totalMinutes % 60,
+      dayOffset: 0,
     };
+  }
 
-    // Schedule notification
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: `⏰ Time for ${habit.name}!`,
-        body: habit.description || 'Don\'t forget to complete your habit today',
-        data: { habitId: habit.id, type: 'habit-reminder' },
-        sound: 'default',
-        priority: Notifications.AndroidNotificationPriority.HIGH,
-        vibrate: [0, 250, 250, 250],
-      },
-      trigger,
-    });
+  const minutesInDay = 24 * 60;
+  const adjustedMinutes = (totalMinutes % minutesInDay + minutesInDay) % minutesInDay;
+  const dayOffset = Math.floor((totalMinutes - adjustedMinutes) / minutesInDay);
 
-    console.log(`Scheduled reminder for ${habit.name} at ${habit.reminderTime}`);
-    return notificationId;
+  return {
+    hour: Math.floor(adjustedMinutes / 60),
+    minute: adjustedMinutes % 60,
+    dayOffset,
+  };
+};
+
+const toExpoWeekday = (day: number) => {
+  // Expo uses 1 = Sunday ... 7 = Saturday
+  return ((day % 7) + 7) % 7 + 1;
+};
+
+interface HabitReminderScheduleOptions {
+  habitId: string;
+  habitTitle: string;
+  hour: number;
+  minute: number;
+  days: number[];
+  leadMinutes?: number;
+  existingNotificationIds?: string[];
+}
+
+/**
+ * Schedule notifications for a habit reminder across selected days
+ */
+export const scheduleHabitReminder = async ({
+  habitId,
+  habitTitle,
+  hour,
+  minute,
+  days,
+  leadMinutes = 0,
+  existingNotificationIds = [],
+}: HabitReminderScheduleOptions): Promise<string[]> => {
+  try {
+    if (!days.length) {
+      return [];
+    }
+
+    if (existingNotificationIds.length) {
+      await cancelHabitReminder(existingNotificationIds);
+    }
+
+    const normalizedDays = [...new Set(days)]
+      .map((day) => ((day % 7) + 7) % 7)
+      .sort((a, b) => a - b);
+    const notificationIds: string[] = [];
+
+    for (const day of normalizedDays) {
+      const { hour: triggerHour, minute: triggerMinute, dayOffset } = calculateReminderTime(
+        hour,
+        minute,
+        leadMinutes
+      );
+
+      const targetDay = (day + dayOffset + 7) % 7;
+      const trigger: Notifications.NotificationTriggerInput = {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: toExpoWeekday(targetDay),
+        hour: triggerHour,
+        minute: triggerMinute,
+      };
+
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `⏰ ${habitTitle}`,
+          body:
+            leadMinutes > 0
+              ? `Starts in ${leadMinutes} minute${leadMinutes === 1 ? '' : 's'}.`
+              : 'Time to work on this habit.',
+          data: {
+            habitId,
+            type: 'habit-reminder',
+            day: targetDay,
+            originalDay: day,
+            leadMinutes,
+          },
+          sound: 'default',
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          vibrate: [0, 250, 250, 250],
+        },
+        trigger,
+      });
+
+      notificationIds.push(notificationId);
+    }
+
+    console.log(
+      `Scheduled ${notificationIds.length} reminder(s) for ${habitTitle} at ${hour}:${minute} with lead ${leadMinutes} minutes`
+    );
+
+    return notificationIds;
   } catch (error) {
     console.error('Error scheduling habit reminder:', error);
-    return null;
+    return [];
   }
 };
 
 /**
  * Cancel a scheduled habit reminder
  */
-export const cancelHabitReminder = async (reminderId: string): Promise<void> => {
+export const cancelHabitReminder = async (reminderIds: string[]): Promise<void> => {
   try {
-    await Notifications.cancelScheduledNotificationAsync(reminderId);
-    console.log(`Cancelled reminder: ${reminderId}`);
+    if (!reminderIds?.length) return;
+
+    await Promise.all(
+      reminderIds.map(async (id) => {
+        try {
+          await Notifications.cancelScheduledNotificationAsync(id);
+          console.log(`Cancelled reminder: ${id}`);
+        } catch (innerError) {
+          console.error(`Error cancelling reminder ${id}:`, innerError);
+        }
+      })
+    );
   } catch (error) {
     console.error('Error cancelling habit reminder:', error);
   }

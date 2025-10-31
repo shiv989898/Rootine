@@ -2,7 +2,6 @@ import { useState } from 'react';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/contexts/AuthContext';
-import { Platform } from 'react-native';
 
 // Important: This enables dismissing the browser on Android
 WebBrowser.maybeCompleteAuthSession();
@@ -18,7 +17,7 @@ export const useGoogleSignIn = () => {
   const { signInWithGoogle } = useAuth();
 
   // Configure Google Auth
-  const [request, response, promptAsync] = Google.useAuthRequest({
+  const [request, , promptAsync] = Google.useAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,

@@ -12,16 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
-import { RootStackParamList } from '@/types';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, ACTIVITY_LEVELS, DIETARY_PREFERENCES } from '@/constants/theme';
 
-type ProfileSetupScreenProp = StackNavigationProp<RootStackParamList, 'ProfileSetup'>;
-
 const ProfileSetupScreen = () => {
-  const navigation = useNavigation<ProfileSetupScreenProp>();
   const { user, updateProfile, signInAsGuest } = useAuth();
   const [step, setStep] = useState(1);
   
