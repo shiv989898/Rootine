@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
@@ -30,6 +31,9 @@ import {
   formatReminderRelativeTime,
 } from '@/utils/reminders';
 import { ALL_REMINDER_DAYS, DEFAULT_REMINDER_LEAD_MINUTES } from '@/constants/reminders';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { logHabitMood } from '@/services/firebase/moodService';
+import MoodRatingModal from '@/components/mood/MoodRatingModal';
 
 const DEFAULT_REMINDER_TIME = '09:00';
 const FILTER_OPTIONS = [
@@ -53,6 +57,7 @@ const formatReminderTime = (date: Date) => {
 };
 
 const HabitsScreen = () => {
+  const { moodTrackingEnabled } = usePreferences();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,6 +72,8 @@ const HabitsScreen = () => {
     totalCompletions: 0,
     bestStreak: 0,
   });
+  const [moodModalVisible, setMoodModalVisible] = useState(false);
+  const [moodHabit, setMoodHabit] = useState<Habit | null>(null);
 
   const filteredHabits = useMemo(() => {
     if (activeFilter === 'reminders') {
@@ -162,12 +169,22 @@ const HabitsScreen = () => {
   };
 
   const handleToggleHabit = async (habitId: string) => {
+    const wasCompleted = completedToday.includes(habitId);
     try {
       await toggleHabitCompletion(habitId);
       // Reload stats and completed list
       await Promise.all([loadStats(), loadCompletedToday()]);
+
+      if (moodTrackingEnabled && !wasCompleted) {
+        const habitDetails = habits.find((habit) => habit.id === habitId) || null;
+        if (habitDetails) {
+          setMoodHabit(habitDetails);
+          setMoodModalVisible(true);
+        }
+      }
     } catch (error) {
       console.error('Error toggling habit:', error);
+      Alert.alert('Update failed', 'We could not update this habit right now. Please try again.');
     }
   };
 
@@ -232,6 +249,20 @@ const HabitsScreen = () => {
     }
   };
 
+  const handleMoodSubmit = async ({ rating, note }: { rating: number; note?: string }) => {
+    if (!moodHabit) return;
+
+    try {
+      await logHabitMood(moodHabit.id, rating, note);
+    } catch (error) {
+      console.error('Error logging mood entry:', error);
+      Alert.alert('Logging failed', 'We could not save your mood entry right now.');
+    } finally {
+      setMoodHabit(null);
+      setMoodModalVisible(false);
+    }
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       {/* Stats Cards */}
@@ -277,6 +308,16 @@ const HabitsScreen = () => {
                 onPress={() => handleReminderPress(habit)}
                 activeOpacity={0.7}
               >
+
+              <MoodRatingModal
+                visible={Boolean(moodTrackingEnabled && moodModalVisible && moodHabit)}
+                habitTitle={moodHabit?.title}
+                onClose={() => {
+                  setMoodModalVisible(false);
+                  setMoodHabit(null);
+                }}
+                onSubmit={handleMoodSubmit}
+              />
                 <Icon name="bell-ring" size={18} color={COLORS.primary} />
               </TouchableOpacity>
             </View>

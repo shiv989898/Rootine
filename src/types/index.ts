@@ -1,3 +1,5 @@
+import { ThemeKey } from '@/constants/themes';
+
 // User Types
 export interface User {
   id: string;
@@ -38,6 +40,50 @@ export interface UserProfile {
   activePowerUps?: PowerUp[];
   storedPowerUps?: PowerUp[];
   quests?: QuestProgress[];
+  preferences?: UserPersonalizationPreferences;
+}
+
+export interface HomeWidgetPreferences {
+  showProgressOverview: boolean;
+  showStreakLeaders: boolean;
+  showQuests: boolean;
+  showChallengeSpotlight: boolean;
+  showTeamChallenge: boolean;
+  showPowerUps: boolean;
+  showWeeklyRecap: boolean;
+  showUpcomingReminders: boolean;
+  showTodaysHabits: boolean;
+  showQuote: boolean;
+  showQuickActions: boolean;
+}
+
+export interface NotificationSoundPreference {
+  type: 'default' | 'bundle' | 'uploaded';
+  id: string;
+  name: string;
+  description?: string;
+  fileUri?: string;
+  bundleAsset?: string;
+}
+
+export interface UserPersonalizationPreferences {
+  theme: ThemeKey;
+  seasonalTheme?: ThemeKey | null;
+  useSeasonalTheme: boolean;
+  homeWidgets: HomeWidgetPreferences;
+  notificationSound: NotificationSoundPreference;
+  moodTrackingEnabled: boolean;
+  lastUpdated: Date;
+}
+
+export interface MoodEntry {
+  id: string;
+  habitId: string;
+  userId: string;
+  date: string; // ISO date string representing the completion day
+  rating: number; // 1-5 scale
+  note?: string;
+  createdAt: Date;
 }
 
 // Habit Types
@@ -444,6 +490,7 @@ export type RootStackParamList = {
   Leaderboard: undefined;
   BadgeShowcase: undefined;
   WeeklyRecap: { recap: WeeklyRecapStory };
+  Personalization: undefined;
   UserProfile: { userId: string };
   FriendsList: undefined;
   SearchUsers: undefined;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,20 +10,40 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/AuthContext';
-import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
 
-const SettingsScreen = () => {
+const MENU_ICON_SIZE = 24;
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
+import { useAuth } from '@/contexts/AuthContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { AppTheme, THEMES } from '@/constants/themes';
+import { SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
+import { RootStackParamList } from '@/types';
+
+const SettingsScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
   const { user, signOut } = useAuth();
-  const navigation = useNavigation();
-  
-  // Settings state
+  const {
+    themePalette,
+    themeKey,
+    homeWidgets,
+    notificationSound,
+    moodTrackingEnabled,
+    setMoodTrackingEnabled,
+  } = usePreferences();
+
   const [notifications, setNotifications] = useState(true);
   const [dailyReminders, setDailyReminders] = useState(true);
   const [weeklyReports, setWeeklyReports] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
+
+  const styles = useMemo(() => createStyles(themePalette), [themePalette]);
+  const themeName = THEMES[themeKey]?.name ?? 'Custom';
+  const enabledWidgetCount = Object.values(homeWidgets || {}).filter(Boolean).length;
+  const totalWidgetCount = Object.keys(homeWidgets || {}).length || 11;
 
   const handleSignOut = () => {
     Alert.alert(
@@ -46,7 +66,7 @@ const SettingsScreen = () => {
     );
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = useCallback(() => {
     Alert.alert(
       'Delete Account',
       'Are you sure you want to delete your account? This action cannot be undone.',
@@ -56,15 +76,17 @@ const SettingsScreen = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            Alert.alert('Coming Soon', 'Account deletion will be available in the next update.');
+            Alert.alert('Coming Soon', 'Account deletion will be available in a future update.');
           },
         },
       ]
     );
-  };
+  }, []);
 
   const renderSection = (title: string) => (
-    <Text style={styles.sectionTitle}>{title}</Text>
+    <Text key={title} style={styles.sectionTitle}>
+      {title}
+    </Text>
   );
 
   const renderMenuItem = (
@@ -75,20 +97,22 @@ const SettingsScreen = () => {
     rightElement?: React.ReactNode
   ) => (
     <TouchableOpacity
+      key={title}
       style={styles.menuItem}
       onPress={onPress}
+      activeOpacity={onPress ? 0.75 : 1}
       disabled={!onPress && !rightElement}
     >
       <View style={styles.menuItemLeft}>
         <View style={styles.iconContainer}>
-          <Icon name={icon as any} size={24} color={COLORS.primary} />
+          <Icon name={icon as any} size={MENU_ICON_SIZE} color={themePalette.primary} />
         </View>
         <View style={styles.menuItemText}>
           <Text style={styles.menuItemTitle}>{title}</Text>
-          {subtitle && <Text style={styles.menuItemSubtitle}>{subtitle}</Text>}
+          {subtitle ? <Text style={styles.menuItemSubtitle}>{subtitle}</Text> : null}
         </View>
       </View>
-      {rightElement || (onPress && <Icon name="chevron-right" size={20} color={COLORS.textSecondary} />)}
+      {rightElement || (onPress ? <Icon name="chevron-right" size={20} color={themePalette.textSecondary} /> : null)}
     </TouchableOpacity>
   );
 
@@ -106,14 +130,18 @@ const SettingsScreen = () => {
     <Switch
       value={value}
       onValueChange={onValueChange}
-      trackColor={{ false: COLORS.border, true: COLORS.primary }}
-      thumbColor="#fff"
+      thumbColor={value ? themePalette.primary : themePalette.card}
+      trackColor={{ false: themePalette.divider, true: `${themePalette.primary}55` }}
     />
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Profile Section */}
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
@@ -125,7 +153,7 @@ const SettingsScreen = () => {
             <Text style={styles.profileName}>{user?.profile.displayName || 'User'}</Text>
             <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
             <View style={styles.levelBadge}>
-              <Icon name="star" size={16} color="#FFD700" />
+              <Icon name="star" size={16} color={themePalette.accent} />
               <Text style={styles.levelText}>Level {user?.profile.level || 0}</Text>
               <Text style={styles.pointsText}>• {user?.profile.points || 0} XP</Text>
             </View>
@@ -138,7 +166,7 @@ const SettingsScreen = () => {
           'account-edit',
           'Edit Profile',
           'Update your personal information',
-          () => navigation.navigate('Profile' as never)
+          () => navigation.navigate('MainTabs', { screen: 'Profile' })
         )}
         {renderMenuItem(
           'shield-account',
@@ -175,6 +203,40 @@ const SettingsScreen = () => {
           setWeeklyReports
         )}
 
+        {/* Personalization */}
+        {renderSection('PERSONALIZATION')}
+        {renderMenuItem(
+          'palette',
+          'Theme',
+          themeName,
+          () => navigation.navigate('Personalization')
+        )}
+        {renderMenuItem(
+          'view-dashboard-outline',
+          'Home Widgets',
+          `${enabledWidgetCount} of ${totalWidgetCount} widgets visible`,
+          () => navigation.navigate('Personalization')
+        )}
+        {renderMenuItem(
+          'bell-ring',
+          'Reminder Sound',
+          notificationSound?.name || 'Default',
+          () => navigation.navigate('Personalization')
+        )}
+        {renderToggleItem(
+          'emoticon-happy-outline',
+          'Mood Tracking',
+          'Prompt to log how you feel after habits',
+          moodTrackingEnabled,
+          setMoodTrackingEnabled
+        )}
+        {renderMenuItem(
+          'tune-variant',
+          'Personalization Studio',
+          'Customize themes, widgets, sounds, and moods',
+          () => navigation.navigate('Personalization')
+        )}
+
         {/* App Preferences */}
         {renderSection('APP PREFERENCES')}
         {renderToggleItem(
@@ -191,16 +253,7 @@ const SettingsScreen = () => {
           hapticFeedback,
           setHapticFeedback
         )}
-        {renderMenuItem(
-          'palette',
-          'Theme',
-          'Light theme (Dark mode coming soon)'
-        )}
-        {renderMenuItem(
-          'translate',
-          'Language',
-          'English (More languages coming soon)'
-        )}
+        {renderMenuItem('translate', 'Language', 'English (More coming soon)')}
 
         {/* Data & Storage */}
         {renderSection('DATA & STORAGE')}
@@ -269,16 +322,16 @@ const SettingsScreen = () => {
         {/* Danger Zone */}
         {renderSection('DANGER ZONE')}
         <TouchableOpacity style={styles.dangerItem} onPress={handleSignOut}>
-          <Icon name="logout" size={24} color={COLORS.error} />
+          <Icon name="logout" size={MENU_ICON_SIZE} color={themePalette.error} />
           <Text style={styles.dangerText}>Sign Out</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.dangerItem} onPress={handleDeleteAccount}>
-          <Icon name="delete-forever" size={24} color={COLORS.error} />
+          <Icon name="delete-forever" size={MENU_ICON_SIZE} color={themePalette.error} />
           <Text style={styles.dangerText}>Delete Account</Text>
         </TouchableOpacity>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Made with ❤️ by Rootine Team</Text>
+          <Text style={styles.footerText}>Made with ❤️ by the Rootine Team</Text>
           <Text style={styles.footerVersion}>Version 1.0.0</Text>
         </View>
       </ScrollView>
@@ -286,142 +339,147 @@ const SettingsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    margin: SPACING.md,
-    padding: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  profileName: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  profileEmail: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-  },
-  levelBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: SPACING.sm,
-  },
-  levelText: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginLeft: SPACING.xs,
-  },
-  pointsText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginLeft: SPACING.xs,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.sm,
-    marginLeft: SPACING.md,
-    letterSpacing: 1,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.xs,
-    borderRadius: RADIUS.md,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.md,
-    backgroundColor: `${COLORS.primary}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuItemText: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  menuItemTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  menuItemSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  dangerItem: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.xs,
-    borderRadius: RADIUS.md,
-    alignItems: 'center',
-  },
-  dangerText: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.error,
-    marginLeft: SPACING.md,
-  },
-  footer: {
-    alignItems: 'center',
-    padding: SPACING.xl,
-    marginTop: SPACING.xl,
-  },
-  footerText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  footerVersion: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-  },
-});
+const createStyles = (palette: AppTheme['palette']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: SPACING.xxl,
+    },
+    profileCard: {
+      flexDirection: 'row',
+      backgroundColor: palette.surface,
+      marginHorizontal: SPACING.md,
+      marginTop: SPACING.lg,
+      padding: SPACING.lg,
+      borderRadius: RADIUS.lg,
+      alignItems: 'center',
+    },
+    avatar: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: palette.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    avatarText: {
+      fontSize: FONT_SIZES.xxl,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+    },
+    profileInfo: {
+      flex: 1,
+      marginLeft: SPACING.md,
+    },
+    profileName: {
+      fontSize: FONT_SIZES.lg,
+      fontWeight: 'bold',
+      color: palette.text,
+    },
+    profileEmail: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginTop: SPACING.xs,
+    },
+    levelBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: SPACING.sm,
+    },
+    levelText: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.text,
+      marginLeft: SPACING.xs,
+    },
+    pointsText: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginLeft: SPACING.xs,
+    },
+    sectionTitle: {
+      fontSize: FONT_SIZES.xs,
+      fontWeight: '700',
+      color: palette.textSecondary,
+      marginTop: SPACING.xl,
+      marginBottom: SPACING.sm,
+      marginLeft: SPACING.md,
+      letterSpacing: 1,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      backgroundColor: palette.surface,
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.md,
+      marginHorizontal: SPACING.md,
+      marginBottom: SPACING.xs,
+      borderRadius: RADIUS.md,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    menuItemLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    iconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: RADIUS.md,
+      backgroundColor: `${palette.primary}15`,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    menuItemText: {
+      flex: 1,
+      marginLeft: SPACING.md,
+    },
+    menuItemTitle: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    menuItemSubtitle: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    dangerItem: {
+      flexDirection: 'row',
+      backgroundColor: palette.surface,
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.md,
+      marginHorizontal: SPACING.md,
+      marginBottom: SPACING.xs,
+      borderRadius: RADIUS.md,
+      alignItems: 'center',
+    },
+    dangerText: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.error,
+      marginLeft: SPACING.md,
+    },
+    footer: {
+      alignItems: 'center',
+      padding: SPACING.xl,
+      marginTop: SPACING.xl,
+    },
+    footerText: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    footerVersion: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+      marginTop: SPACING.xs,
+    },
+  });
 
 export default SettingsScreen;

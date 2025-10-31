@@ -14,8 +14,10 @@ import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
-import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
-import { getGreeting, formatDate } from '@/utils/helpers';
+import { SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { AppTheme } from '@/constants/themes';
+import { getGreeting, formatDate, hexToRgba } from '@/utils/helpers';
 import {
   Habit,
   LeaderboardEntry,
@@ -42,6 +44,8 @@ import {
 import { getLeadTimeLabel } from '@/constants/reminders';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
+type StatItemProps = { label: string; value: string; iconName: string };
+type QuickActionButtonProps = { iconName: string; label: string; onPress?: () => void };
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -64,6 +68,24 @@ const HomeScreen = () => {
   const [activatingPowerUp, setActivatingPowerUp] = useState<string | null>(null);
   const [weeklyRecap, setWeeklyRecap] = useState<WeeklyRecapStory | null>(null);
   const [weeklyRecapLoading, setWeeklyRecapLoading] = useState(false);
+
+  const { themePalette, homeWidgets } = usePreferences();
+  const styles = useMemo(() => createStyles(themePalette), [themePalette]);
+
+  const StatItem = ({ label, value, iconName }: StatItemProps) => (
+    <View style={styles.statItem}>
+      <Icon name={iconName as any} size={32} color={themePalette.primary} />
+      <Text style={styles.statItemValue}>{value}</Text>
+      <Text style={styles.statItemLabel}>{label}</Text>
+    </View>
+  );
+
+  const QuickActionButton = ({ iconName, label, onPress }: QuickActionButtonProps) => (
+    <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.7}>
+      <Icon name={iconName as any} size={32} color={themePalette.primary} />
+      <Text style={styles.actionLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
 
   const dailyQuote = useMemo(() => getDailyQuote(), []);
 
@@ -372,26 +394,27 @@ const HomeScreen = () => {
           </View>
           <Animated.View entering={BounceIn.delay(300)} style={styles.statsContainer}>
             <View style={styles.statBadge}>
-              <Icon name="fire" size={20} color="#FF5722" />
+              <Icon name="fire" size={20} color={themePalette.secondary} />
               <Text style={styles.statValue}>{user?.profile.streakDays || 0}</Text>
               <Text style={styles.statLabel}>Streak</Text>
             </View>
           </Animated.View>
         </Animated.View>
 
-        {/* Quick Stats */}
-        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.card}>
-          <Text style={styles.cardTitle}>Your Progress</Text>
-          <View style={styles.statsRow}>
-            <StatItem label="Level" value={user?.profile.level.toString() || '1'} iconName="star" />
-            <StatItem label="Points" value={user?.profile.points.toString() || '0'} iconName="target" />
-            <StatItem label="Badges" value={user?.profile.badges.length.toString() || '0'} iconName="trophy" />
-          </View>
-        </Animated.View>
+        {homeWidgets.showProgressOverview ? (
+          <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.card}>
+            <Text style={styles.cardTitle}>Your Progress</Text>
+            <View style={styles.statsRow}>
+              <StatItem label="Level" value={user?.profile.level.toString() || '1'} iconName="star" />
+              <StatItem label="Points" value={user?.profile.points.toString() || '0'} iconName="target" />
+              <StatItem label="Badges" value={user?.profile.badges.length.toString() || '0'} iconName="trophy" />
+            </View>
+          </Animated.View>
+        ) : null}
 
-  {/* Streak Leaders */}
-  <Animated.View entering={FadeInUp.delay(250).springify()} style={styles.card}>
-          <View style={styles.cardHeader}>
+        {homeWidgets.showStreakLeaders ? (
+          <Animated.View entering={FadeInUp.delay(250).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Streak Leaders</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate('Leaderboard')}
@@ -403,7 +426,7 @@ const HomeScreen = () => {
 
           {streakLoading ? (
             <View style={styles.streakLoading}>
-              <ActivityIndicator color={COLORS.primary} />
+              <ActivityIndicator color={themePalette.primary} />
               <Text style={styles.streakLoadingText}>Tracking streak champions...</Text>
             </View>
           ) : streakLeaders.length ? (
@@ -433,7 +456,7 @@ const HomeScreen = () => {
                   </Text>
                 </View>
                 <View style={styles.streakValueContainer}>
-                  <Icon name="fire" size={20} color={COLORS.secondary} />
+                  <Icon name="fire" size={20} color={themePalette.secondary} />
                   <Text style={styles.streakValue}>{entry.streak}</Text>
                 </View>
               </View>
@@ -441,11 +464,12 @@ const HomeScreen = () => {
           ) : (
             <Text style={styles.streakEmpty}>Keep your habits going to join the streak leaders.</Text>
           )}
-        </Animated.View>
+          </Animated.View>
+        ) : null}
 
-        {/* Daily & Weekly Quests */}
-        <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.card}>
-          <View style={styles.cardHeader}>
+        {homeWidgets.showQuests ? (
+          <Animated.View entering={FadeInUp.delay(280).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Daily & Weekly Quests</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate('Challenges')}
@@ -457,7 +481,7 @@ const HomeScreen = () => {
 
           {questsLoading ? (
             <View style={styles.questLoading}>
-              <ActivityIndicator color={COLORS.primary} />
+              <ActivityIndicator color={themePalette.primary} />
               <Text style={styles.questLoadingText}>Loading quests...</Text>
             </View>
           ) : quests.length ? (
@@ -503,946 +527,946 @@ const HomeScreen = () => {
               Complete habits today to unlock fresh quests.
             </Text>
           )}
-        </Animated.View>
+          </Animated.View>
+        ) : null}
 
-        {/* Challenge Spotlight */}
-        <Animated.View entering={FadeInUp.delay(320).springify()}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={[styles.card, styles.challengeCard]}
-            onPress={() => navigation.navigate('Challenges')}
-          >
-          <View style={styles.challengeHeader}>
-            <View style={styles.challengeBadge}>
-              <Icon name="fire" size={20} color="#fff" />
-            </View>
-            <Text style={styles.challengeTitle}>Challenge Spotlight</Text>
-          </View>
-
-          {challengeLoading ? (
-            <View style={styles.challengeLoading}>
-              <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.challengeLoadingText}>Fetching your next win...</Text>
-            </View>
-          ) : challenge ? (
-            <>
-              <Text style={styles.challengeName}>{challenge.challenge.title}</Text>
-              <Text style={styles.challengeDescription}>{challenge.challenge.description}</Text>
-              <View style={styles.challengeMetaRow}>
-                <View style={styles.challengeRewardChip}>
-                  <Icon
-                    name="star-circle"
-                    size={18}
-                    color="#FFD54F"
-                    style={styles.challengeRewardChipIcon}
-                  />
-                  <Text style={styles.challengeRewardText}>
-                    {challenge.challenge.reward.points} pts
-                  </Text>
-                </View>
-                <Text style={styles.challengeStatus}>{challengeStatus}</Text>
-              </View>
-              <View style={styles.challengeProgressBar}>
-                <View
-                  style={[styles.challengeProgressFill, { width: `${challengeProgress}%` }]}
-                />
-              </View>
-              <Text style={styles.challengeProgressLabel}>{challengeProgress}% complete</Text>
-            </>
-          ) : (
-            <View>
-              <Text style={styles.challengeEmptyTitle}>No active challenges yet</Text>
-              <Text style={styles.challengeDescription}>
-                Come back tomorrow for a fresh quest and bonus points.
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        </Animated.View>
-
-        {/* Team Challenge */}
-        <Animated.View entering={FadeInUp.delay(360).springify()} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Team Challenge</Text>
+        {homeWidgets.showChallengeSpotlight ? (
+          <Animated.View entering={FadeInUp.delay(320).springify()}>
             <TouchableOpacity
+              activeOpacity={0.9}
+              style={[styles.card, styles.challengeCard]}
               onPress={() => navigation.navigate('Challenges')}
-              activeOpacity={0.7}
             >
-              <Text style={styles.viewAllLink}>Manage</Text>
-            </TouchableOpacity>
-          </View>
-
-          {teamLoading ? (
-            <View style={styles.teamLoading}>
-              <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.teamLoadingText}>Syncing your squad...</Text>
-            </View>
-          ) : activeTeamChallenge ? (
-            <View>
-              <Text style={styles.teamTitle}>{activeTeamChallenge.title}</Text>
-              <Text style={styles.teamDescription} numberOfLines={2}>
-                {activeTeamChallenge.description}
-              </Text>
-              <View style={styles.teamProgressBar}>
-                <View
-                  style={[
-                    styles.teamProgressFill,
-                    { width: `${teamChallengeMetrics?.percent ?? 0}%` },
-                  ]}
-                />
+              <View style={styles.challengeHeader}>
+                <View style={styles.challengeBadge}>
+                  <Icon name="fire" size={20} color="#fff" />
+                </View>
+                <Text style={styles.challengeTitle}>Challenge Spotlight</Text>
               </View>
-              <Text style={styles.teamProgressText}>
-                {teamChallengeMetrics?.totalContribution ?? 0}/
-                {activeTeamChallenge.goal.target} collective progress •
-                {` ${teamChallengeMetrics?.percent ?? 0}%`}
-              </Text>
 
-              {teamChallengeMetrics?.topMembers?.length ? (
-                <View style={styles.teamMembersSection}>
-                  {teamChallengeMetrics.topMembers.map((member) => (
-                    <View key={member.userId} style={styles.teamMemberRow}>
-                      <View style={styles.teamMemberAvatar}>
-                        <Icon name="account" size={18} color={COLORS.white} />
-                      </View>
-                      <Text style={styles.teamMemberName} numberOfLines={1}>
-                        {member.displayName}
-                      </Text>
-                      <Text style={styles.teamMemberContribution}>
-                        +{member.contribution}
+              {challengeLoading ? (
+                <View style={styles.challengeLoading}>
+                  <ActivityIndicator color={themePalette.primary} />
+                  <Text style={styles.challengeLoadingText}>Fetching your next win...</Text>
+                </View>
+              ) : challenge ? (
+                <>
+                  <Text style={styles.challengeName}>{challenge.challenge.title}</Text>
+                  <Text style={styles.challengeDescription}>{challenge.challenge.description}</Text>
+                  <View style={styles.challengeMetaRow}>
+                    <View style={styles.challengeRewardChip}>
+                      <Icon
+                        name="star-circle"
+                        size={18}
+                        color={themePalette.warning}
+                        style={styles.challengeRewardChipIcon}
+                      />
+                      <Text style={styles.challengeRewardText}>
+                        {challenge.challenge.reward.points} pts
                       </Text>
                     </View>
-                  ))}
+                    <Text style={styles.challengeStatus}>{challengeStatus}</Text>
+                  </View>
+                  <View style={styles.challengeProgressBar}>
+                    <View
+                      style={[styles.challengeProgressFill, { width: `${challengeProgress}%` }]}
+                    />
+                  </View>
+                  <Text style={styles.challengeProgressLabel}>{challengeProgress}% complete</Text>
+                </>
+              ) : (
+                <View>
+                  <Text style={styles.challengeEmptyTitle}>No active challenges yet</Text>
+                  <Text style={styles.challengeDescription}>
+                    Come back tomorrow for a fresh quest and bonus points.
+                  </Text>
                 </View>
-              ) : null}
-            </View>
-          ) : (
-            <Text style={styles.teamEmpty}>
-              Create a team challenge with friends to chase a shared goal.
-            </Text>
-          )}
-        </Animated.View>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        ) : null}
 
-        {/* Power-Ups */}
-  <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Power-Ups</Text>
-          </View>
-
-          {powerUpsLoading ? (
-            <View style={styles.powerUpLoading}>
-              <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.powerUpLoadingText}>Preparing boosts...</Text>
+        {homeWidgets.showTeamChallenge ? (
+          <Animated.View entering={FadeInUp.delay(360).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Team Challenge</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Challenges')}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.viewAllLink}>Manage</Text>
+              </TouchableOpacity>
             </View>
-          ) : (
-            <View>
-              {powerUps.active.length ? (
-                <View style={styles.powerUpSection}>
-                  <Text style={styles.powerUpSectionTitle}>Active Right Now</Text>
-                  {powerUps.active.map((item) => {
-                    const expiresLabel = item.expiresAt
-                      ? `Ends ${formatReminderRelativeTime(item.expiresAt)}`
-                      : 'Ongoing';
-                    return (
-                      <View key={item.id} style={styles.powerUpActiveRow}>
+
+            {teamLoading ? (
+              <View style={styles.teamLoading}>
+                <ActivityIndicator color={themePalette.primary} />
+                <Text style={styles.teamLoadingText}>Syncing your squad...</Text>
+              </View>
+            ) : activeTeamChallenge ? (
+              <View>
+                <Text style={styles.teamTitle}>{activeTeamChallenge.title}</Text>
+                <Text style={styles.teamDescription} numberOfLines={2}>
+                  {activeTeamChallenge.description}
+                </Text>
+                <View style={styles.teamProgressBar}>
+                  <View
+                    style={[
+                      styles.teamProgressFill,
+                      { width: `${teamChallengeMetrics?.percent ?? 0}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.teamProgressText}>
+                  {teamChallengeMetrics?.totalContribution ?? 0}/
+                  {activeTeamChallenge.goal.target} collective progress •
+                  {` ${teamChallengeMetrics?.percent ?? 0}%`}
+                </Text>
+
+                {teamChallengeMetrics?.topMembers?.length ? (
+                  <View style={styles.teamMembersSection}>
+                    {teamChallengeMetrics.topMembers.map((member) => (
+                      <View key={member.userId} style={styles.teamMemberRow}>
+                        <View style={styles.teamMemberAvatar}>
+                          <Icon name="account" size={18} color="#FFFFFF" />
+                        </View>
+                        <Text style={styles.teamMemberName} numberOfLines={1}>
+                          {member.displayName}
+                        </Text>
+                        <Text style={styles.teamMemberContribution}>
+                          +{member.contribution}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <Text style={styles.teamEmpty}>
+                Create a team challenge with friends to chase a shared goal.
+              </Text>
+            )}
+          </Animated.View>
+        ) : null}
+
+        {homeWidgets.showPowerUps ? (
+          <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Power-Ups</Text>
+            </View>
+
+            {powerUpsLoading ? (
+              <View style={styles.powerUpLoading}>
+                <ActivityIndicator color={themePalette.primary} />
+                <Text style={styles.powerUpLoadingText}>Preparing boosts...</Text>
+              </View>
+            ) : (
+              <View>
+                {powerUps.active.length ? (
+                  <View style={styles.powerUpSection}>
+                    <Text style={styles.powerUpSectionTitle}>Active Right Now</Text>
+                    {powerUps.active.map((item) => {
+                      const expiresLabel = item.expiresAt
+                        ? `Ends ${formatReminderRelativeTime(item.expiresAt)}`
+                        : 'Ongoing';
+                      return (
+                        <View key={item.id} style={styles.powerUpActiveRow}>
+                          <View style={styles.powerUpInfo}>
+                            <Text style={styles.powerUpName}>{item.name}</Text>
+                            <Text style={styles.powerUpDescription} numberOfLines={2}>
+                              {item.description}
+                            </Text>
+                            <Text style={styles.powerUpMeta}>{expiresLabel}</Text>
+                          </View>
+                          <Icon name={item.icon as any} size={26} color={themePalette.secondary} />
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <Text style={styles.powerUpEmpty}>No active power-ups. Activate one below!</Text>
+                )}
+
+                {powerUps.inventory.length ? (
+                  <View style={styles.powerUpSection}>
+                    <Text style={styles.powerUpSectionTitle}>Inventory</Text>
+                    {powerUps.inventory.map((item) => (
+                      <View key={item.id} style={styles.powerUpInventoryRow}>
                         <View style={styles.powerUpInfo}>
                           <Text style={styles.powerUpName}>{item.name}</Text>
                           <Text style={styles.powerUpDescription} numberOfLines={2}>
                             {item.description}
                           </Text>
-                          <Text style={styles.powerUpMeta}>{expiresLabel}</Text>
+                          <Text style={styles.powerUpMeta}>
+                            {item.usesRemaining ?? 1} use{(item.usesRemaining ?? 1) > 1 ? 's' : ''} left
+                          </Text>
                         </View>
-                        <Icon name={item.icon as any} size={26} color={COLORS.secondary} />
+                        <TouchableOpacity
+                          style={styles.powerUpActivateButton}
+                          onPress={() => handleActivatePowerUp(item.id, item.name)}
+                          activeOpacity={0.8}
+                          disabled={activatingPowerUp === item.id}
+                        >
+                          {activatingPowerUp === item.id ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : (
+                            <Text style={styles.powerUpActivateText}>Activate</Text>
+                          )}
+                        </TouchableOpacity>
                       </View>
-                    );
-                  })}
-                </View>
-              ) : (
-                <Text style={styles.powerUpEmpty}>No active power-ups. Activate one below!</Text>
-              )}
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            )}
+          </Animated.View>
+        ) : null}
 
-              {powerUps.inventory.length ? (
-                <View style={styles.powerUpSection}>
-                  <Text style={styles.powerUpSectionTitle}>Inventory</Text>
-                  {powerUps.inventory.map((item) => (
-                    <View key={item.id} style={styles.powerUpInventoryRow}>
-                      <View style={styles.powerUpInfo}>
-                        <Text style={styles.powerUpName}>{item.name}</Text>
-                        <Text style={styles.powerUpDescription} numberOfLines={2}>
-                          {item.description}
-                        </Text>
-                        <Text style={styles.powerUpMeta}>
-                          {item.usesRemaining ?? 1} use{(item.usesRemaining ?? 1) > 1 ? 's' : ''} left
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        style={styles.powerUpActivateButton}
-                        onPress={() => handleActivatePowerUp(item.id, item.name)}
-                        activeOpacity={0.8}
-                        disabled={activatingPowerUp === item.id}
-                      >
-                        {activatingPowerUp === item.id ? (
-                          <ActivityIndicator color={COLORS.white} size="small" />
-                        ) : (
-                          <Text style={styles.powerUpActivateText}>Activate</Text>
-                        )}
-                      </TouchableOpacity>
+        {homeWidgets.showWeeklyRecap ? (
+          <Animated.View entering={FadeInUp.delay(420).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Weekly Recap</Text>
+              {weeklyRecap ? (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('WeeklyRecap', { recap: weeklyRecap })}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.viewAllLink}>View story</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {weeklyRecapLoading ? (
+              <View style={styles.recapLoading}>
+                <ActivityIndicator color={themePalette.primary} />
+                <Text style={styles.recapLoadingText}>Building your highlight reel...</Text>
+              </View>
+            ) : weeklyRecap ? (
+              <View>
+                <View style={styles.recapStatsRow}>
+                  {weeklyRecap.stats.slice(0, 3).map((stat) => (
+                    <View key={stat.label} style={styles.recapStatChip}>
+                      <Icon name={stat.icon as any} size={18} color={themePalette.primary} />
+                      <Text style={styles.recapStatLabel}>{stat.label}</Text>
+                      <Text style={styles.recapStatValue}>{stat.value}</Text>
                     </View>
                   ))}
                 </View>
-              ) : null}
-            </View>
-          )}
-        </Animated.View>
+                <Text style={styles.recapHighlight} numberOfLines={2}>
+                  {weeklyRecap.highlights[0]?.description || 'Keep up the amazing momentum!'}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.recapEmpty}>
+                Complete habits this week to unlock your recap story.
+              </Text>
+            )}
+          </Animated.View>
+        ) : null}
 
-        {/* Weekly Recap */}
-        <Animated.View entering={FadeInUp.delay(420).springify()} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Weekly Recap</Text>
-            {weeklyRecap ? (
+        {homeWidgets.showUpcomingReminders ? (
+          <Animated.View entering={FadeInUp.delay(460).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Upcoming Reminders</Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate('WeeklyRecap', { recap: weeklyRecap })}
+                onPress={() => navigation.navigate('MainTabs', { screen: 'Habits' })}
                 activeOpacity={0.7}
               >
-                <Text style={styles.viewAllLink}>View story</Text>
+                <Text style={styles.viewAllLink}>View all</Text>
               </TouchableOpacity>
-            ) : null}
-          </View>
-
-          {weeklyRecapLoading ? (
-            <View style={styles.recapLoading}>
-              <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.recapLoadingText}>Building your highlight reel...</Text>
             </View>
-          ) : weeklyRecap ? (
-            <View>
-              <View style={styles.recapStatsRow}>
-                {weeklyRecap.stats.slice(0, 3).map((stat) => (
-                  <View key={stat.label} style={styles.recapStatChip}>
-                    <Icon name={stat.icon as any} size={18} color={COLORS.primary} />
-                    <Text style={styles.recapStatLabel}>{stat.label}</Text>
-                    <Text style={styles.recapStatValue}>{stat.value}</Text>
+
+            {remindersLoading ? (
+              <View style={styles.reminderLoading}>
+                <ActivityIndicator color={themePalette.primary} />
+                <Text style={styles.reminderLoadingText}>Checking your schedule...</Text>
+              </View>
+            ) : upcomingReminders.length ? (
+              upcomingReminders.map(({ habit, next }) => (
+                <View key={habit.id} style={styles.reminderRow}>
+                  <View style={[styles.reminderIcon, { backgroundColor: habit.color }]}>
+                    <Icon name={habit.icon as any} size={22} color="#FFFFFF" />
                   </View>
-                ))}
-              </View>
-              <Text style={styles.recapHighlight} numberOfLines={2}>
-                {weeklyRecap.highlights[0]?.description || 'Keep up the amazing momentum!'}
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles.recapEmpty}>
-              Complete habits this week to unlock your recap story.
-            </Text>
-          )}
-        </Animated.View>
+                  <View style={styles.reminderContent}>
+                    <Text style={styles.reminderTitle} numberOfLines={1}>
+                      {habit.title}
+                    </Text>
+                    <Text style={styles.reminderMeta} numberOfLines={1}>
+                      {formatReminderDateTime(next)} • {formatReminderRelativeTime(next)}
+                    </Text>
+                    <Text style={styles.reminderSubMeta}>
+                      {getLeadTimeLabel(habit.reminderLeadMinutes ?? 0)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.reminderAction}
+                    onPress={() => navigation.navigate('MainTabs', { screen: 'Habits' })}
+                    activeOpacity={0.7}
+                  >
+                    <Icon name="arrow-right" size={18} color={themePalette.primary} />
+                  </TouchableOpacity>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.reminderEmpty}>No reminders scheduled yet.</Text>
+            )}
+          </Animated.View>
+        ) : null}
 
-        {/* Upcoming Reminders */}
-        <Animated.View entering={FadeInUp.delay(460).springify()} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Upcoming Reminders</Text>
+        {homeWidgets.showTodaysHabits ? (
+          <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Today's Habits</Text>
+              <Text style={styles.dateText}>{formatDate(new Date(), 'MMM dd')}</Text>
+            </View>
+            <Text style={styles.emptyText}>Start tracking your habits!</Text>
             <TouchableOpacity
+              style={styles.addButton}
               onPress={() => navigation.navigate('MainTabs', { screen: 'Habits' })}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Text style={styles.viewAllLink}>View all</Text>
+              <Icon name="plus" size={20} color="#FFFFFF" />
+              <Text style={styles.addButtonText}>Add Habit</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
+        ) : null}
 
-          {remindersLoading ? (
-            <View style={styles.reminderLoading}>
-              <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.reminderLoadingText}>Checking your schedule...</Text>
-            </View>
-          ) : upcomingReminders.length ? (
-            upcomingReminders.map(({ habit, next }) => (
-              <View key={habit.id} style={styles.reminderRow}>
-                <View style={[styles.reminderIcon, { backgroundColor: habit.color }]}>
-                  <Icon name={habit.icon as any} size={22} color={COLORS.white} />
-                </View>
-                <View style={styles.reminderContent}>
-                  <Text style={styles.reminderTitle} numberOfLines={1}>
-                    {habit.title}
-                  </Text>
-                  <Text style={styles.reminderMeta} numberOfLines={1}>
-                    {formatReminderDateTime(next)} • {formatReminderRelativeTime(next)}
-                  </Text>
-                  <Text style={styles.reminderSubMeta}>
-                    {getLeadTimeLabel(habit.reminderLeadMinutes ?? 0)}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.reminderAction}
-                  onPress={() => navigation.navigate('MainTabs', { screen: 'Habits' })}
-                  activeOpacity={0.7}
-                >
-                  <Icon name="arrow-right" size={18} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.reminderEmpty}>No reminders scheduled yet.</Text>
-          )}
-        </Animated.View>
+        {homeWidgets.showQuote ? (
+          <Animated.View entering={FadeInUp.delay(550).springify()} style={[styles.card, styles.quoteCard]}>
+            <Icon
+              name="format-quote-open"
+              size={32}
+              color={themePalette.primary}
+              style={{ opacity: 0.3, marginBottom: SPACING.sm }}
+            />
+            <Text style={styles.quoteText}>
+              "{dailyQuote.text}"
+            </Text>
+            <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
+          </Animated.View>
+        ) : null}
 
-        {/* Today's Habits */}
-        <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Today's Habits</Text>
-            <Text style={styles.dateText}>{formatDate(new Date(), 'MMM dd')}</Text>
-          </View>
-          <Text style={styles.emptyText}>Start tracking your habits!</Text>
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => navigation.navigate('MainTabs', { screen: 'Habits' })}
-            activeOpacity={0.8}
-          >
-            <Icon name="plus" size={20} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Add Habit</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-  {/* Motivational Quote */}
-  <Animated.View entering={FadeInUp.delay(550).springify()} style={[styles.card, styles.quoteCard]}>
-          <Icon name="format-quote-open" size={32} color={COLORS.primary} style={{ opacity: 0.3, marginBottom: SPACING.sm }} />
-          <Text style={styles.quoteText}>
-            "{dailyQuote.text}"
-          </Text>
-          <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
-        </Animated.View>
-
-  {/* Quick Actions */}
-  <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.actionsContainer}>
-          <QuickActionButton iconName="podium-gold" label="Leaderboard" onPress={() => navigation.navigate('Leaderboard')} />
-          <QuickActionButton iconName="trophy" label="Challenges" onPress={() => navigation.navigate('Challenges')} />
-          <QuickActionButton iconName="account-group" label="Add Friends" onPress={() => navigation.navigate('SearchUsers')} />
-        </Animated.View>
+        {homeWidgets.showQuickActions ? (
+          <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.actionsContainer}>
+            <QuickActionButton iconName="podium-gold" label="Leaderboard" onPress={() => navigation.navigate('Leaderboard')} />
+            <QuickActionButton iconName="trophy" label="Challenges" onPress={() => navigation.navigate('Challenges')} />
+            <QuickActionButton iconName="account-group" label="Add Friends" onPress={() => navigation.navigate('SearchUsers')} />
+          </Animated.View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const StatItem = ({ label, value, iconName }: { label: string; value: string; iconName: string }) => (
-  <View style={styles.statItem}>
-    <Icon name={iconName as any} size={32} color={COLORS.primary} />
-    <Text style={styles.statItemValue}>{value}</Text>
-    <Text style={styles.statItemLabel}>{label}</Text>
-  </View>
-);
-
-const QuickActionButton = ({ iconName, label, onPress }: { iconName: string; label: string; onPress?: () => void }) => (
-  <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.7}>
-    <Icon name={iconName as any} size={32} color={COLORS.primary} />
-    <Text style={styles.actionLabel}>{label}</Text>
-  </TouchableOpacity>
-);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    padding: SPACING.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.lg,
-  },
-  greeting: {
-    fontSize: FONT_SIZES.lg,
-    color: COLORS.textSecondary,
-  },
-  userName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  statsContainer: {
-    alignItems: 'flex-end',
-  },
-  statBadge: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.lg,
-    alignItems: 'center',
-    ...SHADOWS.sm,
-  },
-  statValue: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  statLabel: {
-    fontSize: FONT_SIZES.xs,
-    color: '#FFFFFF',
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    ...SHADOWS.md,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  cardTitle: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  viewAllLink: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  streakLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  streakLoadingText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginLeft: SPACING.sm,
-  },
-  streakRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.divider,
-  },
-  streakRowHighlight: {
-    backgroundColor: 'rgba(76, 175, 80, 0.12)',
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.sm,
-  },
-  streakRankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-    marginRight: SPACING.md,
-  },
-  streakRankBadgeFirst: {
-    backgroundColor: COLORS.primaryLight,
-  },
-  streakRankText: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  streakDetails: {
-    flex: 1,
-    marginRight: SPACING.md,
-  },
-  streakName: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  streakSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  streakValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  streakValue: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '700',
-    color: COLORS.secondary,
-    marginLeft: 4,
-  },
-  streakEmpty: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  questLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  questLoadingText: {
-    marginLeft: SPACING.sm,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  questRow: {
-    marginBottom: SPACING.md,
-  },
-  questHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  questTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-    flex: 1,
-    marginRight: SPACING.sm,
-  },
-  questTypePill: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.md,
-  },
-  questTypeDaily: {
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
-  },
-  questTypeWeekly: {
-    backgroundColor: 'rgba(33, 150, 243, 0.15)',
-  },
-  questTypeText: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  questDescription: {
-    marginTop: 4,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  questProgressBar: {
-    height: 8,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.divider,
-    marginTop: SPACING.sm,
-    overflow: 'hidden',
-  },
-  questProgressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-  },
-  questProgressText: {
-    marginTop: 4,
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-  },
-  questEmpty: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  teamLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  teamLoadingText: {
-    marginLeft: SPACING.sm,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  teamTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  teamDescription: {
-    marginTop: 4,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  teamProgressBar: {
-    height: 10,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.divider,
-    marginTop: SPACING.sm,
-    overflow: 'hidden',
-  },
-  teamProgressFill: {
-    height: '100%',
-    backgroundColor: COLORS.secondary,
-  },
-  teamProgressText: {
-    marginTop: 4,
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-  },
-  teamMembersSection: {
-    marginTop: SPACING.md,
-  },
-  teamMemberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  teamMemberAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.sm,
-  },
-  teamMemberName: {
-    flex: 1,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text,
-  },
-  teamMemberContribution: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  teamEmpty: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  powerUpLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  powerUpLoadingText: {
-    marginLeft: SPACING.sm,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  powerUpSection: {
-    marginTop: SPACING.sm,
-  },
-  powerUpSectionTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.xs,
-  },
-  powerUpActiveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.background,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  powerUpInfo: {
-    flex: 1,
-    marginRight: SPACING.sm,
-  },
-  powerUpName: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  powerUpDescription: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  powerUpMeta: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.primary,
-    marginTop: 4,
-  },
-  powerUpEmpty: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  powerUpInventoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.divider,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  powerUpActivateButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 6,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md,
-  },
-  powerUpActivateText: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-  recapLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  recapLoadingText: {
-    marginLeft: SPACING.sm,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  recapStatsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: SPACING.sm,
-  },
-  recapStatChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.sm,
-    marginRight: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  recapStatLabel: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-    marginLeft: SPACING.xs,
-  },
-  recapStatValue: {
-    marginLeft: 'auto',
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  recapHighlight: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  recapEmpty: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  dateText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: SPACING.md,
-  },
-  challengeCard: {
-    marginBottom: SPACING.md,
-    overflow: 'hidden',
-    backgroundColor: '#F2FDF6',
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.15)',
-  },
-  challengeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  challengeBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  challengeTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginLeft: SPACING.sm,
-  },
-  challengeLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: SPACING.xs,
-  },
-  challengeLoadingText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginLeft: SPACING.sm,
-  },
-  challengeName: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  challengeDescription: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
-    lineHeight: 20,
-  },
-  challengeMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
-  },
-  challengeRewardChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF8E1',
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-  },
-  challengeRewardChipIcon: {
-    marginRight: SPACING.xs,
-  },
-  challengeRewardText: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: '#F57C00',
-  },
-  challengeStatus: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  challengeProgressBar: {
-    height: 10,
-    borderRadius: 20,
-    backgroundColor: '#E0F2F1',
-    overflow: 'hidden',
-  },
-  challengeProgressFill: {
-    height: '100%',
-    borderRadius: 20,
-    backgroundColor: COLORS.primary,
-  },
-  challengeProgressLabel: {
-    marginTop: SPACING.xs,
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
-  },
-  challengeEmptyTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  reminderLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reminderLoadingText: {
-    marginLeft: SPACING.sm,
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZES.sm,
-  },
-  reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  reminderIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.round,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  reminderContent: {
-    flex: 1,
-  },
-  reminderTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  reminderMeta: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  reminderSubMeta: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  reminderAction: {
-    padding: SPACING.xs,
-  },
-  reminderEmpty: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZES.sm,
-  },
-  quoteCard: {
-    backgroundColor: '#F0F4FF',
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-  },
-  quoteIcon: {
-    marginBottom: SPACING.sm,
-    opacity: 0.3,
-  },
-  quoteText: {
-    fontSize: FONT_SIZES.md,
-    fontStyle: 'italic',
-    color: COLORS.text,
-    lineHeight: 22,
-    marginBottom: SPACING.sm,
-  },
-  quoteAuthor: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statItemValue: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginTop: SPACING.xs,
-  },
-  statItemLabel: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZES.md,
-    marginVertical: SPACING.lg,
-  },
-  addButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.xs,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: SPACING.md,
-  },
-  actionButton: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    marginHorizontal: SPACING.xs,
-    alignItems: 'center',
-    ...SHADOWS.sm,
-  },
-  actionLabel: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.text,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
-  },
-});
+const createStyles = (palette: AppTheme['palette']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    scrollContent: {
+      padding: SPACING.lg,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: SPACING.lg,
+    },
+    greeting: {
+      fontSize: FONT_SIZES.lg,
+      color: palette.textSecondary,
+    },
+    userName: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: palette.text,
+    },
+    statsContainer: {
+      alignItems: 'flex-end',
+    },
+    statBadge: {
+      backgroundColor: palette.primary,
+      paddingVertical: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      borderRadius: RADIUS.lg,
+      alignItems: 'center',
+      ...SHADOWS.sm,
+    },
+    statValue: {
+      fontSize: FONT_SIZES.xl,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+    },
+    statLabel: {
+      fontSize: FONT_SIZES.xs,
+      color: '#FFFFFF',
+    },
+    card: {
+      backgroundColor: palette.surface,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.lg,
+      marginBottom: SPACING.md,
+      ...SHADOWS.md,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+    },
+    cardTitle: {
+      fontSize: FONT_SIZES.xl,
+      fontWeight: 'bold',
+      color: palette.text,
+    },
+    viewAllLink: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.primary,
+    },
+    streakLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    streakLoadingText: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginLeft: SPACING.sm,
+    },
+    streakRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: SPACING.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: palette.divider,
+    },
+    streakRowHighlight: {
+      backgroundColor: hexToRgba(palette.primary, 0.12),
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.sm,
+    },
+    streakRankBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: palette.background,
+      marginRight: SPACING.md,
+    },
+    streakRankBadgeFirst: {
+      backgroundColor: hexToRgba(palette.primary, 0.2),
+    },
+    streakRankText: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    streakDetails: {
+      flex: 1,
+      marginRight: SPACING.md,
+    },
+    streakName: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    streakSubtitle: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    streakValueContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    streakValue: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '700',
+      color: palette.secondary,
+      marginLeft: 4,
+    },
+    streakEmpty: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    questLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    questLoadingText: {
+      marginLeft: SPACING.sm,
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    questRow: {
+      marginBottom: SPACING.md,
+    },
+    questHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    questTitle: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+      flex: 1,
+      marginRight: SPACING.sm,
+    },
+    questTypePill: {
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: 4,
+      borderRadius: RADIUS.md,
+    },
+    questTypeDaily: {
+      backgroundColor: hexToRgba(palette.success, 0.18),
+    },
+    questTypeWeekly: {
+      backgroundColor: hexToRgba(palette.accent, 0.18),
+    },
+    questTypeText: {
+      fontSize: FONT_SIZES.xs,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    questDescription: {
+      marginTop: 4,
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    questProgressBar: {
+      height: 8,
+      borderRadius: RADIUS.round,
+      backgroundColor: palette.divider,
+      marginTop: SPACING.sm,
+      overflow: 'hidden',
+    },
+    questProgressFill: {
+      height: '100%',
+      backgroundColor: palette.primary,
+    },
+    questProgressText: {
+      marginTop: 4,
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+    },
+    questEmpty: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    teamLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    teamLoadingText: {
+      marginLeft: SPACING.sm,
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    teamTitle: {
+      fontSize: FONT_SIZES.lg,
+      fontWeight: '700',
+      color: palette.text,
+    },
+    teamDescription: {
+      marginTop: 4,
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    teamProgressBar: {
+      height: 10,
+      borderRadius: RADIUS.round,
+      backgroundColor: palette.divider,
+      marginTop: SPACING.sm,
+      overflow: 'hidden',
+    },
+    teamProgressFill: {
+      height: '100%',
+      backgroundColor: palette.secondary,
+    },
+    teamProgressText: {
+      marginTop: 4,
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+    },
+    teamMembersSection: {
+      marginTop: SPACING.md,
+    },
+    teamMemberRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: SPACING.sm,
+    },
+    teamMemberAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: palette.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: SPACING.sm,
+    },
+    teamMemberName: {
+      flex: 1,
+      fontSize: FONT_SIZES.sm,
+      color: palette.text,
+    },
+    teamMemberContribution: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.primary,
+    },
+    teamEmpty: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    powerUpLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    powerUpLoadingText: {
+      marginLeft: SPACING.sm,
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    powerUpSection: {
+      marginTop: SPACING.sm,
+    },
+    powerUpSectionTitle: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.textSecondary,
+      marginBottom: SPACING.xs,
+    },
+    powerUpActiveRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: palette.background,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.md,
+      marginBottom: SPACING.sm,
+    },
+    powerUpInfo: {
+      flex: 1,
+      marginRight: SPACING.sm,
+    },
+    powerUpName: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    powerUpDescription: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    powerUpMeta: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.primary,
+      marginTop: 4,
+    },
+    powerUpEmpty: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    powerUpInventoryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.divider,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.md,
+      marginBottom: SPACING.sm,
+    },
+    powerUpActivateButton: {
+      backgroundColor: palette.primary,
+      paddingVertical: 6,
+      paddingHorizontal: SPACING.md,
+      borderRadius: RADIUS.md,
+    },
+    powerUpActivateText: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+    recapLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    recapLoadingText: {
+      marginLeft: SPACING.sm,
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    recapStatsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginBottom: SPACING.sm,
+    },
+    recapStatChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.background,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.sm,
+      marginRight: SPACING.sm,
+      marginBottom: SPACING.sm,
+    },
+    recapStatLabel: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+      marginLeft: SPACING.xs,
+    },
+    recapStatValue: {
+      marginLeft: 'auto',
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    recapHighlight: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    recapEmpty: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    dateText: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginTop: SPACING.md,
+    },
+    challengeCard: {
+      marginBottom: SPACING.md,
+      overflow: 'hidden',
+      backgroundColor: hexToRgba(palette.success, 0.12),
+      borderWidth: 1,
+      borderColor: hexToRgba(palette.success, 0.25),
+    },
+    challengeHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: SPACING.sm,
+    },
+    challengeBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: palette.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    challengeTitle: {
+      fontSize: FONT_SIZES.lg,
+      fontWeight: '700',
+      color: palette.text,
+      marginLeft: SPACING.sm,
+    },
+    challengeLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: SPACING.xs,
+    },
+    challengeLoadingText: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginLeft: SPACING.sm,
+    },
+    challengeName: {
+      fontSize: FONT_SIZES.lg,
+      fontWeight: 'bold',
+      color: palette.text,
+      marginBottom: SPACING.xs,
+    },
+    challengeDescription: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      marginBottom: SPACING.sm,
+      lineHeight: 20,
+    },
+    challengeMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: SPACING.sm,
+    },
+    challengeRewardChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: hexToRgba(palette.warning, 0.2),
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: SPACING.xs,
+    },
+    challengeRewardChipIcon: {
+      marginRight: SPACING.xs,
+    },
+    challengeRewardText: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.warning,
+    },
+    challengeStatus: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      fontWeight: '500',
+    },
+    challengeProgressBar: {
+      height: 10,
+      borderRadius: 20,
+      backgroundColor: hexToRgba(palette.primary, 0.15),
+      overflow: 'hidden',
+    },
+    challengeProgressFill: {
+      height: '100%',
+      borderRadius: 20,
+      backgroundColor: palette.primary,
+    },
+    challengeProgressLabel: {
+      marginTop: SPACING.xs,
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+      fontWeight: '600',
+    },
+    challengeEmptyTitle: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+      marginBottom: SPACING.xs,
+    },
+    reminderLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    reminderLoadingText: {
+      marginLeft: SPACING.sm,
+      color: palette.textSecondary,
+      fontSize: FONT_SIZES.sm,
+    },
+    reminderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: SPACING.sm,
+    },
+    reminderIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: RADIUS.round,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: SPACING.md,
+    },
+    reminderContent: {
+      flex: 1,
+    },
+    reminderTitle: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    reminderMeta: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    reminderSubMeta: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    reminderAction: {
+      padding: SPACING.xs,
+    },
+    reminderEmpty: {
+      color: palette.textSecondary,
+      fontSize: FONT_SIZES.sm,
+    },
+    quoteCard: {
+      backgroundColor: hexToRgba(palette.accent, 0.15),
+      borderLeftWidth: 4,
+      borderLeftColor: palette.primary,
+    },
+    quoteIcon: {
+      marginBottom: SPACING.sm,
+      opacity: 0.3,
+    },
+    quoteText: {
+      fontSize: FONT_SIZES.md,
+      fontStyle: 'italic',
+      color: palette.text,
+      lineHeight: 22,
+      marginBottom: SPACING.sm,
+    },
+    quoteAuthor: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      fontWeight: '600',
+      textAlign: 'right',
+    },
+    statItem: {
+      alignItems: 'center',
+    },
+    statItemValue: {
+      fontSize: FONT_SIZES.xxl,
+      fontWeight: 'bold',
+      color: palette.text,
+      marginTop: SPACING.xs,
+    },
+    statItemLabel: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+    },
+    emptyText: {
+      textAlign: 'center',
+      color: palette.textSecondary,
+      fontSize: FONT_SIZES.md,
+      marginVertical: SPACING.lg,
+    },
+    addButton: {
+      backgroundColor: palette.primary,
+      paddingVertical: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      borderRadius: RADIUS.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.xs,
+    },
+    addButtonText: {
+      color: '#FFFFFF',
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+    },
+    actionsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: SPACING.md,
+    },
+    actionButton: {
+      flex: 1,
+      backgroundColor: palette.surface,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.md,
+      marginHorizontal: SPACING.xs,
+      alignItems: 'center',
+      ...SHADOWS.sm,
+    },
+    actionLabel: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.text,
+      textAlign: 'center',
+      marginTop: SPACING.xs,
+    },
+  });
 
 export default HomeScreen;

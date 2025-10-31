@@ -263,7 +263,11 @@ const ProfileScreen = () => {
             label="Find Friends" 
             onPress={() => navigation.navigate('SearchUsers')}
           />
-          <MenuOption icon="cog" label="Settings" onPress={() => {}} />
+          <MenuOption 
+            icon="cog" 
+            label="Settings" 
+            onPress={() => navigation.navigate('Settings')}
+          />
           {!user?.profile.isPremium && (
             <MenuOption icon="star" label="Upgrade to Premium" premium onPress={() => {}} />
           )}

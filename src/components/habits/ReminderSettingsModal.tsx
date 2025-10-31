@@ -23,6 +23,7 @@ import {
   cancelHabitReminder,
 } from '@/services/notifications/notificationService';
 import * as Haptics from 'expo-haptics';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface ReminderSettingsModalProps {
   visible: boolean;
@@ -53,6 +54,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { notificationSound } = usePreferences();
   const [enabled, setEnabled] = useState(existingReminder?.enabled || false);
   const [reminderTime, setReminderTime] = useState(
     existingReminder?.time || new Date()
@@ -121,6 +123,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
           days: sortedDays,
           leadMinutes,
           existingNotificationIds: existingReminder?.notificationIds,
+          soundPreference: notificationSound,
         });
         settings.notificationIds = notificationIds;
       } else {

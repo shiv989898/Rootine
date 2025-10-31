@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { NotificationSoundPreference } from '@/types';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -95,7 +96,44 @@ interface HabitReminderScheduleOptions {
   days: number[];
   leadMinutes?: number;
   existingNotificationIds?: string[];
+  soundPreference?: NotificationSoundPreference;
 }
+
+const configureHabitReminderChannel = async (soundPref?: NotificationSoundPreference) => {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  const channelSound =
+    soundPref?.type === 'bundle' && soundPref.bundleAsset
+      ? soundPref.bundleAsset
+      : 'default';
+
+  await Notifications.setNotificationChannelAsync('habit-reminders', {
+    name: 'Habit Reminders',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#4CAF50',
+    sound: channelSound,
+  });
+};
+
+const resolveNotificationSound = (soundPref?: NotificationSoundPreference): string => {
+  if (!soundPref || soundPref.type === 'default') {
+    return 'default';
+  }
+
+  if (soundPref.type === 'bundle' && soundPref.bundleAsset) {
+    return soundPref.bundleAsset;
+  }
+
+  if (soundPref.type === 'uploaded') {
+    // Custom runtime uploads require native integration; fall back to default sound until bundled
+    return 'default';
+  }
+
+  return 'default';
+};
 
 /**
  * Schedule notifications for a habit reminder across selected days
@@ -108,6 +146,7 @@ export const scheduleHabitReminder = async ({
   days,
   leadMinutes = 0,
   existingNotificationIds = [],
+  soundPreference,
 }: HabitReminderScheduleOptions): Promise<string[]> => {
   try {
     if (!days.length) {
@@ -117,6 +156,9 @@ export const scheduleHabitReminder = async ({
     if (existingNotificationIds.length) {
       await cancelHabitReminder(existingNotificationIds);
     }
+
+    await configureHabitReminderChannel(soundPreference);
+    const notificationSound = resolveNotificationSound(soundPreference);
 
     const normalizedDays = [...new Set(days)]
       .map((day) => ((day % 7) + 7) % 7)
@@ -152,7 +194,7 @@ export const scheduleHabitReminder = async ({
             originalDay: day,
             leadMinutes,
           },
-          sound: 'default',
+          sound: notificationSound,
           priority: Notifications.AndroidNotificationPriority.HIGH,
           vibrate: [0, 250, 250, 250],
         },
