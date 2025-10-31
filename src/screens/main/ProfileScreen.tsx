@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '@/constants/theme';
@@ -37,11 +37,8 @@ const ProfileScreen = () => {
     monthlyPoints: 0,
   });
 
-  useEffect(() => {
-    loadProfileData();
-  }, []);
-
-  const loadProfileData = async () => {
+  const loadProfileData = useCallback(async () => {
+    setLoading(true);
     try {
       const [friends, pendingRequests, userBadges, stats] = await Promise.all([
         getFriends(),
@@ -51,14 +48,20 @@ const ProfileScreen = () => {
       ]);
       setFriendsCount(friends.length);
       setPendingRequestsCount(pendingRequests.length);
-      setBadges(userBadges);
+      setBadges(Array.isArray(userBadges) ? userBadges : []);
       setUserStats(stats);
     } catch (error) {
       console.error('Error loading profile data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfileData();
+    }, [loadProfileData])
+  );
 
   if (loading) {
     return (
@@ -91,12 +94,13 @@ const ProfileScreen = () => {
   // Calculate XP progress to next level
   const currentLevelXP = userStats.level * 100;
   const nextLevelXP = (userStats.level + 1) * 100;
-  const xpProgress = userStats.points - currentLevelXP;
-  const xpNeeded = nextLevelXP - currentLevelXP;
+  const xpProgressRaw = userStats.points - currentLevelXP;
+  const xpNeeded = Math.max(nextLevelXP - currentLevelXP, 1);
+  const xpProgress = Math.min(Math.max(xpProgressRaw, 0), xpNeeded);
   const progressPercentage = (xpProgress / xpNeeded) * 100;
 
   // Get top 3 badges by rarity
-  const topBadges = badges
+  const topBadges = [...badges]
     .sort((a, b) => {
       const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
       return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
