@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
@@ -6,9 +6,11 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/contexts/AuthContext';
 import { RootStackParamList } from '@/types';
-import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
+import { SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
 import { isValidEmail } from '@/utils/helpers';
 import { useGoogleSignIn } from '@/hooks/useGoogleSignIn';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { AppTheme } from '@/constants/themes';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -19,6 +21,8 @@ const LoginScreen = () => {
   const { signIn } = useAuth();
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const googleSignIn = useGoogleSignIn();
+  const { themePalette } = usePreferences();
+  const styles = useMemo(() => createStyles(themePalette), [themePalette]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -52,7 +56,7 @@ const LoginScreen = () => {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Icon name="leaf" size={60} color={COLORS.primary} />
+            <Icon name="leaf" size={60} color={themePalette.primary} />
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
           </View>
@@ -102,40 +106,41 @@ const LoginScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  keyboardView: { flex: 1 },
-  scrollContent: { flexGrow: 1, padding: SPACING.xl },
-  header: { alignItems: 'center', marginTop: 40, marginBottom: 40 },
-  title: { fontSize: 32, fontWeight: 'bold', color: COLORS.text, marginTop: SPACING.md },
-  subtitle: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary, marginTop: SPACING.xs },
-  form: { flex: 1 },
-  inputContainer: { marginBottom: SPACING.lg },
-  label: { fontSize: FONT_SIZES.md, fontWeight: '600', color: COLORS.text, marginBottom: SPACING.xs },
-  input: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, padding: SPACING.md, fontSize: FONT_SIZES.md, color: COLORS.text },
-  forgotPassword: { alignSelf: 'flex-end', marginBottom: SPACING.lg },
-  forgotPasswordText: { color: COLORS.primary, fontSize: FONT_SIZES.sm },
-  button: { backgroundColor: COLORS.primary, padding: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', marginTop: SPACING.md },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#FFFFFF', fontSize: FONT_SIZES.lg, fontWeight: '600' },
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.xl },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border || '#E0E0E0' },
-  dividerText: { paddingHorizontal: SPACING.md, color: COLORS.textSecondary, fontSize: FONT_SIZES.sm },
-  googleButton: { 
-    backgroundColor: '#FFFFFF', 
-    padding: SPACING.md, 
-    borderRadius: RADIUS.md, 
-    alignItems: 'center', 
-    flexDirection: 'row', 
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    gap: SPACING.sm,
-  },
-  googleButtonText: { color: '#333333', fontSize: FONT_SIZES.lg, fontWeight: '600' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl },
-  footerText: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary },
-  footerLink: { fontSize: FONT_SIZES.md, color: COLORS.primary, fontWeight: '600' },
-});
+const createStyles = (palette: AppTheme['palette']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: palette.background },
+    keyboardView: { flex: 1 },
+    scrollContent: { flexGrow: 1, padding: SPACING.xl },
+    header: { alignItems: 'center', marginTop: 40, marginBottom: 40 },
+    title: { fontSize: 32, fontWeight: 'bold', color: palette.text, marginTop: SPACING.md },
+    subtitle: { fontSize: FONT_SIZES.md, color: palette.textSecondary, marginTop: SPACING.xs },
+    form: { flex: 1 },
+    inputContainer: { marginBottom: SPACING.lg },
+    label: { fontSize: FONT_SIZES.md, fontWeight: '600', color: palette.text, marginBottom: SPACING.xs },
+    input: { backgroundColor: palette.surface, borderRadius: RADIUS.md, padding: SPACING.md, fontSize: FONT_SIZES.md, color: palette.text },
+    forgotPassword: { alignSelf: 'flex-end', marginBottom: SPACING.lg },
+    forgotPasswordText: { color: palette.primary, fontSize: FONT_SIZES.sm },
+    button: { backgroundColor: palette.primary, padding: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', marginTop: SPACING.md },
+    buttonDisabled: { opacity: 0.6 },
+    buttonText: { color: '#FFFFFF', fontSize: FONT_SIZES.lg, fontWeight: '600' },
+    divider: { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.xl },
+    dividerLine: { flex: 1, height: 1, backgroundColor: palette.divider },
+    dividerText: { paddingHorizontal: SPACING.md, color: palette.textSecondary, fontSize: FONT_SIZES.sm },
+    googleButton: { 
+      backgroundColor: palette.surface, 
+      padding: SPACING.md, 
+      borderRadius: RADIUS.md, 
+      alignItems: 'center', 
+      flexDirection: 'row', 
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: palette.border,
+      gap: SPACING.sm,
+    },
+    googleButtonText: { color: palette.text, fontSize: FONT_SIZES.lg, fontWeight: '600' },
+    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl },
+    footerText: { fontSize: FONT_SIZES.md, color: palette.textSecondary },
+    footerLink: { fontSize: FONT_SIZES.md, color: palette.primary, fontWeight: '600' },
+  });
 
 export default LoginScreen;

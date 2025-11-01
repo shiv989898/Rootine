@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
-import { COLORS, SPACING, FONT_SIZES, RADIUS, ACTIVITY_LEVELS, DIETARY_PREFERENCES } from '@/constants/theme';
+import { SPACING, FONT_SIZES, RADIUS, ACTIVITY_LEVELS, DIETARY_PREFERENCES } from '@/constants/theme';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { AppTheme } from '@/constants/themes';
 
 const ProfileSetupScreen = () => {
   const { user, updateProfile, signInAsGuest } = useAuth();
   const [step, setStep] = useState(1);
+  const { themePalette } = usePreferences();
+  const styles = useMemo(() => createStyles(themePalette), [themePalette]);
   
   // Profile data
   const [age, setAge] = useState('');
@@ -233,7 +237,7 @@ const ProfileSetupScreen = () => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Icon name="leaf" size={60} color={COLORS.primary} />
+            <Icon name="leaf" size={60} color={themePalette.primary} />
             <Text style={styles.title}>Setup Your Profile</Text>
             <View style={styles.progressBar}>
               <View
@@ -282,163 +286,165 @@ const ProfileSetupScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: SPACING.lg,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  emoji: {
-    fontSize: 60,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: SPACING.md,
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: COLORS.border,
-    borderRadius: 2,
-    marginTop: SPACING.md,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: 2,
-  },
-  stepContainer: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  stepSubtitle: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
-  },
-  inputGroup: {
-    marginBottom: SPACING.lg,
-  },
-  label: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    fontSize: FONT_SIZES.md,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  optionButton: {
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-  },
-  optionButtonActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary,
-  },
-  optionText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text,
-  },
-  optionTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  activityCard: {
-    padding: SPACING.md,
-    borderRadius: RADIUS.lg,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    marginRight: SPACING.sm,
-    width: 180,
-  },
-  activityCardActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-  },
-  activityLabel: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  activityLabelActive: {
-    color: COLORS.primary,
-  },
-  activityDescription: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginTop: SPACING.xl,
-  },
-  button: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.lg,
-    alignItems: 'center',
-  },
-  buttonSecondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: FONT_SIZES.lg,
-    fontWeight: 'bold',
-  },
-  buttonTextSecondary: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZES.lg,
-    fontWeight: 'bold',
-  },
-  skipText: {
-    textAlign: 'center',
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZES.md,
-    marginTop: SPACING.md,
-  },
-});
+const createStyles = (palette: AppTheme['palette']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      padding: SPACING.lg,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: SPACING.xl,
+    },
+    emoji: {
+      fontSize: 60,
+      marginBottom: SPACING.md,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: palette.text,
+      marginBottom: SPACING.md,
+    },
+    progressBar: {
+      width: '100%',
+      height: 4,
+      backgroundColor: palette.divider,
+      borderRadius: 2,
+      marginTop: SPACING.md,
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: palette.primary,
+      borderRadius: 2,
+    },
+    stepContainer: {
+      flex: 1,
+    },
+    stepTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: palette.text,
+      marginBottom: SPACING.sm,
+    },
+    stepSubtitle: {
+      fontSize: FONT_SIZES.md,
+      color: palette.textSecondary,
+      marginBottom: SPACING.lg,
+    },
+    inputGroup: {
+      marginBottom: SPACING.lg,
+    },
+    label: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+      marginBottom: SPACING.sm,
+    },
+    input: {
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.border,
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      fontSize: FONT_SIZES.md,
+      color: palette.text,
+    },
+    textArea: {
+      height: 80,
+      textAlignVertical: 'top',
+    },
+    optionsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: SPACING.sm,
+    },
+    optionButton: {
+      paddingVertical: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      borderRadius: RADIUS.md,
+      borderWidth: 1,
+      borderColor: palette.border,
+      backgroundColor: palette.surface,
+    },
+    optionButtonActive: {
+      borderColor: palette.primary,
+      backgroundColor: `${palette.primary}22`,
+    },
+    optionText: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.text,
+    },
+    optionTextActive: {
+      color: palette.primary,
+      fontWeight: '600',
+    },
+    activityCard: {
+      padding: SPACING.md,
+      borderRadius: RADIUS.lg,
+      borderWidth: 2,
+      borderColor: palette.border,
+      backgroundColor: palette.surface,
+      marginRight: SPACING.sm,
+      width: 180,
+    },
+    activityCardActive: {
+      borderColor: palette.primary,
+      backgroundColor: `${palette.primary}22`,
+    },
+    activityLabel: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+      marginBottom: SPACING.xs,
+    },
+    activityLabelActive: {
+      color: palette.primary,
+    },
+    activityDescription: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+      marginTop: SPACING.xl,
+    },
+    button: {
+      flex: 1,
+      backgroundColor: palette.primary,
+      paddingVertical: SPACING.md,
+      borderRadius: RADIUS.lg,
+      alignItems: 'center',
+    },
+    buttonSecondary: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: palette.primary,
+    },
+    buttonText: {
+      color: palette.onPrimary,
+      fontSize: FONT_SIZES.lg,
+      fontWeight: 'bold',
+    },
+    buttonTextSecondary: {
+      color: palette.primary,
+      fontSize: FONT_SIZES.lg,
+      fontWeight: 'bold',
+    },
+    skipText: {
+      textAlign: 'center',
+      color: palette.textSecondary,
+      fontSize: FONT_SIZES.md,
+      marginTop: SPACING.md,
+    },
+  });
 
 export default ProfileSetupScreen;
