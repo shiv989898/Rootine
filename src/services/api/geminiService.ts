@@ -128,12 +128,17 @@ export const geminiService = {
     date: string,
     dietType: string = 'vegetarian',
     mealType: string = 'all',
-    seed?: number
+    seed?: number,
+    previousMealNames?: string[]
   ): Promise<DietPlan> => {
     try {
       // Add variety by including seed in prompt
       const varietyNote = seed
         ? `\n\nIMPORTANT: This is request #${seed}. Provide DIFFERENT meal suggestions than previous requests. Be creative with recipes and ingredients to ensure variety.`
+        : '';
+
+      const uniquenessNote = previousMealNames && previousMealNames.length
+        ? `\n\nDO NOT repeat these meal names or near duplicates: ${previousMealNames.join(', ')}. Suggest new, distinct recipes.`
         : '';
       
       // Determine which meals to include
@@ -198,7 +203,7 @@ Make sure the meals are:
 - ${dietType === 'vegan' ? 'Completely plant-based (vegan)' : dietType === 'non-vegetarian' ? 'Can include meat, fish, and eggs' : dietType === 'pescatarian' ? 'Fish and plant-based (no meat)' : 'Vegetarian'}
 - Free from: ${profile.allergies.length > 0 ? profile.allergies.join(', ') : 'No restrictions'}
 - Suitable for ${profile.activityLevel} activity level
-- Nutritionally balanced${varietyNote}
+- Nutritionally balanced${varietyNote}${uniquenessNote}
 `;
 
       const text = await callGemini(prompt);
