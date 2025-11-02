@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
+import { SPACING, FONT_SIZES } from '@/constants/theme';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { AppTheme } from '@/constants/themes';
 import { Post } from '@/types';
 import { subscribeToFeedPosts } from '@/services/firebase/socialService';
 import { PostCard } from '@/components/social/PostCard';
@@ -18,6 +20,8 @@ import { CreatePostModal } from '@/components/social/CreatePostModal';
 import { CommentsModal } from '@/components/social/CommentsModal';
 
 const FeedScreen = () => {
+  const { themePalette } = usePreferences();
+  const styles = useMemo(() => createStyles(themePalette), [themePalette]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,31 +51,31 @@ const FeedScreen = () => {
     return unsubscribe;
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
     loadFeed();
-  };
+  }, []);
 
-  const handleCreatePost = () => {
+  const handleCreatePost = useCallback(() => {
     setCreatePostModalVisible(true);
-  };
+  }, []);
 
-  const handleCommentPress = (postId: string) => {
+  const handleCommentPress = useCallback((postId: string) => {
     const post = posts.find(p => p.id === postId);
     if (post) {
       setSelectedPost(post);
       setCommentsModalVisible(true);
     }
-  };
+  }, [posts]);
 
-  const handleUserPress = (userId: string) => {
+  const handleUserPress = useCallback((userId: string) => {
     // TODO: Navigate to user profile
     console.log('View user profile:', userId);
-  };
+  }, []);
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="post-outline" size={64} color={COLORS.textSecondary} />
+      <Icon name="post-outline" size={64} color={themePalette.textSecondary} />
       <Text style={styles.emptyTitle}>No Posts Yet</Text>
       <Text style={styles.emptySubtitle}>
         Be the first to share your journey!
@@ -82,6 +86,15 @@ const FeedScreen = () => {
     </View>
   );
 
+  const renderPost = useCallback(({ item }: { item: Post }) => (
+    <PostCard
+      post={item}
+      onComment={() => handleCommentPress(item.id)}
+      onUserPress={handleUserPress}
+      onDelete={handleRefresh}
+    />
+  ), [handleCommentPress, handleUserPress, handleRefresh]);
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -89,7 +102,7 @@ const FeedScreen = () => {
           <Text style={styles.headerTitle}>Feed</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={themePalette.primary} />
           <Text style={styles.loadingText}>Loading feed...</Text>
         </View>
       </SafeAreaView>
@@ -105,7 +118,7 @@ const FeedScreen = () => {
           style={styles.createButton}
           onPress={handleCreatePost}
         >
-          <Icon name="plus" size={24} color={COLORS.white} />
+          <Icon name="plus" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -113,24 +126,21 @@ const FeedScreen = () => {
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onComment={() => handleCommentPress(item.id)}
-            onUserPress={handleUserPress}
-            onDelete={() => handleRefresh()}
-          />
-        )}
+        renderItem={renderPost}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmpty}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
+            tintColor={themePalette.primary}
+            colors={[themePalette.primary]}
           />
         }
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        initialNumToRender={5}
       />
 
       {/* Create Post Modal */}
@@ -156,79 +166,80 @@ const FeedScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  headerTitle: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  createButton: {
-    backgroundColor: COLORS.primary,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContent: {
-    padding: SPACING.md,
-    flexGrow: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: SPACING.md,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: SPACING.xxl,
-  },
-  emptyTitle: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginTop: SPACING.md,
-  },
-  emptySubtitle: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
-    paddingHorizontal: SPACING.xl,
-  },
-  createFirstButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: 999,
-    marginTop: SPACING.lg,
-  },
-  createFirstButtonText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-  },
-});
+const createStyles = (palette: AppTheme['palette']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.md,
+      backgroundColor: palette.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    headerTitle: {
+      fontSize: FONT_SIZES.xxl,
+      fontWeight: 'bold',
+      color: palette.text,
+    },
+    createButton: {
+      backgroundColor: palette.primary,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    listContent: {
+      padding: SPACING.md,
+      flexGrow: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: SPACING.md,
+      fontSize: FONT_SIZES.md,
+      color: palette.textSecondary,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: SPACING.xxl,
+    },
+    emptyTitle: {
+      fontSize: FONT_SIZES.xl,
+      fontWeight: '600',
+      color: palette.text,
+      marginTop: SPACING.md,
+    },
+    emptySubtitle: {
+      fontSize: FONT_SIZES.md,
+      color: palette.textSecondary,
+      textAlign: 'center',
+      marginTop: SPACING.xs,
+      paddingHorizontal: SPACING.xl,
+    },
+    createFirstButton: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: SPACING.xl,
+      paddingVertical: SPACING.md,
+      borderRadius: 999,
+      marginTop: SPACING.lg,
+    },
+    createFirstButtonText: {
+      color: '#FFFFFF',
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+    },
+  });
 
 export default FeedScreen;
