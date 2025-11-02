@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
+import { SPACING, FONT_SIZES, RADIUS } from '@/constants/theme';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { AppTheme } from '@/constants/themes';
 import { Habit } from '@/types';
 import { 
   getUserHabits, 
@@ -31,7 +33,6 @@ import {
   formatReminderRelativeTime,
 } from '@/utils/reminders';
 import { ALL_REMINDER_DAYS, DEFAULT_REMINDER_LEAD_MINUTES } from '@/constants/reminders';
-import { usePreferences } from '@/contexts/PreferencesContext';
 import { logHabitMood } from '@/services/firebase/moodService';
 import MoodRatingModal from '@/components/mood/MoodRatingModal';
 
@@ -57,7 +58,8 @@ const formatReminderTime = (date: Date) => {
 };
 
 const HabitsScreen = () => {
-  const { moodTrackingEnabled } = usePreferences();
+  const { moodTrackingEnabled, themePalette } = usePreferences();
+  const styles = useMemo(() => createStyles(themePalette), [themePalette]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -293,7 +295,7 @@ const HabitsScreen = () => {
           {upcomingReminders.map(({ habit, next }) => (
             <View key={habit.id} style={styles.upcomingItem}>
               <View style={[styles.upcomingIcon, { backgroundColor: habit.color }]}>
-                <Icon name={habit.icon as any} size={20} color={COLORS.white} />
+                <Icon name={habit.icon as any} size={20} color="#FFFFFF" />
               </View>
               <View style={styles.upcomingContent}>
                 <Text style={styles.upcomingHabitTitle} numberOfLines={1}>
@@ -318,7 +320,7 @@ const HabitsScreen = () => {
                 }}
                 onSubmit={handleMoodSubmit}
               />
-                <Icon name="bell-ring" size={18} color={COLORS.primary} />
+                <Icon name="bell-ring" size={18} color={themePalette.primary} />
               </TouchableOpacity>
             </View>
           ))}
@@ -413,7 +415,7 @@ const HabitsScreen = () => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={themePalette.primary} />
           <Text style={styles.loadingText}>Loading your habits...</Text>
         </View>
       </SafeAreaView>
@@ -433,7 +435,7 @@ const HabitsScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
+            tintColor={themePalette.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -462,187 +464,188 @@ const HabitsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: SPACING.md,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-  },
-  listContent: {
-    padding: SPACING.lg,
-    paddingBottom: SPACING.xl * 2,
-  },
-  header: {
-    marginBottom: SPACING.lg,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.lg,
-  },
-  upcomingCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  upcomingHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  upcomingTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  upcomingCount: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  upcomingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  upcomingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.round,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  upcomingContent: {
-    flex: 1,
-  },
-  upcomingHabitTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  upcomingMeta: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  upcomingAction: {
-    padding: SPACING.xs,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  filterChip: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.round,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  filterChipText: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  filterChipTextActive: {
-    color: COLORS.white,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    marginHorizontal: SPACING.xs,
-    alignItems: 'center',
-    shadowColor: COLORS.dark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: SPACING.xs,
-  },
-  statLabel: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  createButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
-  },
-  createButtonText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.xl * 2,
-  },
-  emptyTitle: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  emptySubtitle: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xl,
-    paddingHorizontal: SPACING.xl,
-  },
-  emptyButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.lg,
-  },
-  emptyButtonText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-  },
-});
+const createStyles = (palette: AppTheme['palette']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: SPACING.md,
+      fontSize: FONT_SIZES.md,
+      color: palette.textSecondary,
+    },
+    listContent: {
+      padding: SPACING.lg,
+      paddingBottom: SPACING.xxl * 2,
+    },
+    header: {
+      marginBottom: SPACING.lg,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: SPACING.lg,
+    },
+    upcomingCard: {
+      backgroundColor: palette.card,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.md,
+      marginBottom: SPACING.lg,
+      borderWidth: 1,
+      borderColor: palette.border,
+    },
+    upcomingHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.sm,
+    },
+    upcomingTitle: {
+      fontSize: FONT_SIZES.lg,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    upcomingCount: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    upcomingItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: SPACING.sm,
+    },
+    upcomingIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: RADIUS.round,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: SPACING.md,
+    },
+    upcomingContent: {
+      flex: 1,
+    },
+    upcomingHabitTitle: {
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    upcomingMeta: {
+      fontSize: FONT_SIZES.xs,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    upcomingAction: {
+      padding: SPACING.xs,
+    },
+    filterRow: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+      marginBottom: SPACING.md,
+    },
+    filterChip: {
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.xs,
+      borderRadius: RADIUS.round,
+      borderWidth: 1,
+      borderColor: palette.border,
+      backgroundColor: palette.surface,
+    },
+    filterChipActive: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    filterChipText: {
+      fontSize: FONT_SIZES.sm,
+      fontWeight: '600',
+      color: palette.text,
+    },
+    filterChipTextActive: {
+      color: '#FFFFFF',
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: palette.card,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.md,
+      marginHorizontal: SPACING.xs,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    statValue: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: palette.primary,
+      marginBottom: SPACING.xs,
+    },
+    statLabel: {
+      fontSize: FONT_SIZES.sm,
+      color: palette.textSecondary,
+      textAlign: 'center',
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+    },
+    sectionTitle: {
+      fontSize: FONT_SIZES.xl,
+      fontWeight: 'bold',
+      color: palette.text,
+    },
+    createButton: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderRadius: RADIUS.md,
+    },
+    createButtonText: {
+      color: '#FFFFFF',
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: SPACING.xxl * 2,
+    },
+    emptyTitle: {
+      fontSize: FONT_SIZES.xl,
+      fontWeight: 'bold',
+      color: palette.text,
+      marginBottom: SPACING.sm,
+    },
+    emptySubtitle: {
+      fontSize: FONT_SIZES.md,
+      color: palette.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xl,
+      paddingHorizontal: SPACING.xl,
+    },
+    emptyButton: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: SPACING.xl,
+      paddingVertical: SPACING.md,
+      borderRadius: RADIUS.lg,
+    },
+    emptyButtonText: {
+      color: '#FFFFFF',
+      fontSize: FONT_SIZES.md,
+      fontWeight: '600',
+    },
+  });
 
 export default HabitsScreen;
